@@ -2,20 +2,30 @@
 @using ISourceKO.Models.Enums
 @inject IStudentSubmissionService SubmissionService
 
-<article class="card-lift bg-white rounded border border-oxford-200/90 shadow-subtle flex flex-col justify-between overflow-hidden">
+<article class="card-lift bg-white rounded-lg border border-oxford-200/90 shadow-subtle flex flex-col justify-between overflow-hidden group relative">
+    <!-- Top-Voted Highlight Pip -->
+    @if (Submission.Upvotes >= 40)
+    {
+        <div class="absolute top-2 right-2 z-10">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-flame text-white shadow-subtle tracking-tight animate-scale-in">
+                🔥 Top Study Note
+            </span>
+        </div>
+    }
+
     <!-- Image Thumbnail if Student Uploaded a Note Photo -->
     @if (!string.IsNullOrEmpty(Submission.ImagePath))
     {
-        <div class="relative w-full h-44 bg-oxford-100 overflow-hidden cursor-pointer group img-zoom-frame border-b border-oxford-200/60"
+        <div class="relative w-full h-44 bg-oxford-100 overflow-hidden cursor-pointer img-zoom-frame border-b border-oxford-200/70"
              @onclick="() => OnViewImage.InvokeAsync(Submission.ImagePath)">
             <img src="@Submission.ImagePath"
                  alt="@Submission.Title"
                  class="w-full h-full object-cover"
                  loading="lazy" />
             <div class="absolute inset-0 bg-oxford-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span class="px-2.5 py-1 bg-oxford-950/80 backdrop-blur-sm text-bone text-xs font-medium rounded flex items-center gap-1.5 shadow-subtle">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                <span class="px-3 py-1 bg-oxford-950/85 backdrop-blur-sm text-bone text-xs font-semibold rounded flex items-center gap-1.5 shadow-subtle">
+                    <svg class="w-3.5 h-3.5 text-flame" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                     </svg>
                     Expand Note Photo
                 </span>
@@ -35,18 +45,18 @@
                 <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-evergreen-light text-evergreen-dark border border-emerald-200">
                     Peer Source
                 </span>
-                <span class="text-[11px] text-oxford-400">
+                <span class="text-[11px] text-oxford-400 font-mono">
                     @Submission.SubmittedAt.ToString("MMM dd, yyyy")
                 </span>
             </div>
 
-            <!-- Title in Editorial Serif -->
-            <h4 class="font-serif text-base font-semibold text-oxford-950 leading-snug">
+            <!-- Title in Editorial Serif with Hover Pop -->
+            <h4 class="font-serif text-base font-bold text-oxford-950 leading-snug group-hover:text-evergreen-dark transition-colors">
                 @if (!string.IsNullOrEmpty(Submission.SourceUrl))
                 {
-                    <a href="@Submission.SourceUrl" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-oxford-400 underline-offset-2 flex items-start gap-1">
+                    <a href="@Submission.SourceUrl" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-evergreen underline-offset-2 flex items-start gap-1">
                         <span>@Submission.Title</span>
-                        <svg class="w-3 h-3 text-oxford-400 mt-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-oxford-400 mt-1 shrink-0 group-hover:text-evergreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                     </a>
@@ -68,7 +78,7 @@
                 <div class="mt-3 flex flex-wrap gap-1">
                     @foreach (var tag in Submission.Tags)
                     {
-                        <span class="text-[11px] bg-bone text-oxford-600 border border-oxford-200/50 px-2 py-0.5 rounded">
+                        <span class="text-[11px] bg-bone text-oxford-600 border border-oxford-200 px-2 py-0.5 rounded font-medium">
                             #@tag
                         </span>
                     }
@@ -76,23 +86,23 @@
             }
         </div>
 
-        <!-- Student Attribution + Tactile Upvote Button -->
+        <!-- Student Attribution + Dynamic Upvote Pop Button -->
         <div class="mt-5 pt-3.5 border-t border-oxford-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded bg-oxford-900 text-bone font-serif text-xs font-semibold flex items-center justify-center">
+                <div class="w-7 h-7 rounded bg-oxford-900 text-bone font-serif text-xs font-bold flex items-center justify-center border border-oxford-800 shadow-subtle">
                     @(Submission.StudentName.FirstOrDefault())
                 </div>
                 <div class="text-xs">
-                    <p class="font-semibold text-oxford-800 leading-none">@Submission.StudentName</p>
+                    <p class="font-bold text-oxford-900 leading-none">@Submission.StudentName</p>
                     <p class="text-oxford-400 text-[11px] mt-0.5">@(Submission.SchoolOrProgram ?? "Student")</p>
                 </div>
             </div>
 
-            <!-- Animated Upvote Counter Button -->
+            <!-- Upvote Button with Keyframe Burst Animation -->
             <button type="button"
                     @onclick="Upvote"
-                    class="btn-press inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-oxford-200 hover:border-evergreen hover:bg-evergreen-light text-oxford-700 hover:text-evergreen-dark transition-colors text-xs font-semibold @(isUpvoted ? "bg-evergreen-light border-emerald-300 text-evergreen-dark" : "")">
-                <svg class="w-3.5 h-3.5 @(isUpvoted ? "text-evergreen" : "text-oxford-400")" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="btn-press inline-flex items-center gap-1.5 px-3 py-1 rounded border transition-all text-xs font-bold @(isUpvoted ? "bg-evergreen-light border-emerald-400 text-evergreen-dark animate-upvote-burst shadow-sm" : "border-oxford-200 hover:border-evergreen hover:bg-evergreen-light text-oxford-700")">
+                <svg class="w-3.5 h-3.5 @(isUpvoted ? "text-evergreen-dark" : "text-oxford-400")" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
                 </svg>
                 <span>@Submission.Upvotes</span>

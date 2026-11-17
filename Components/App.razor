@@ -10,17 +10,42 @@
     <!-- Editorial Two-Font Pairing: Newsreader (Display Serif) + Plus Jakarta Sans (Interface/Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="css/tailwind.min.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
 </head>
 
-<body class="bg-[#FBFBF9] text-[#0C131F] font-sans antialiased min-h-screen selection:bg-slate-200 selection:text-slate-900">
+<body class="bg-[#FBFBF9] text-[#0C131F] font-sans antialiased min-h-screen selection:bg-flame/15 selection:text-oxford-950">
+    <!-- Dynamic Reading Scroll Progress Bar -->
+    <div id="reading-progress" class="fixed top-0 left-0 h-[2.5px] bg-gradient-to-r from-flame via-amber-500 to-academic z-50 transition-all duration-75 pointer-events-none" style="width: 0%"></div>
+
     <Routes />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+
+    <!-- Dynamic Scroll Listener Script (Seamless Progress & Header Flow) -->
+    <script>
+        (function() {
+            let ticking = false;
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+                        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                        const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+                        const progressBar = document.getElementById('reading-progress');
+                        if (progressBar) {
+                            progressBar.style.width = scrolled + '%';
+                        }
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }, { passive: true });
+        })();
+    </script>
 </body>
 
 </html>

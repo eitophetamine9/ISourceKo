@@ -10,6 +10,12 @@ module.exports = {
       colors: {
         bone: '#FBFBF9',
         paper: '#FFFFFF',
+        flame: {
+          DEFAULT: '#FF5400',
+          light: '#FFF0EB',
+          hover: '#E04A00',
+          glow: 'rgba(255, 84, 0, 0.15)',
+        },
         oxford: {
           DEFAULT: '#0C131F',
           50: '#F8FAFC',
@@ -51,31 +57,39 @@ module.exports = {
         }
       },
       fontFamily: {
-        serif: ['Newsreader', 'Georgia', 'Cambria', 'Times New Roman', 'serif'],
+        serif: ['Newsreader', 'Georgia', 'Cambria', 'serif'],
         sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       boxShadow: {
         'subtle': '0 1px 3px 0 rgba(12, 19, 31, 0.05), 0 1px 2px -1px rgba(12, 19, 31, 0.05)',
-        'lift': '0 6px 16px -2px rgba(12, 19, 31, 0.08), 0 2px 6px -2px rgba(12, 19, 31, 0.04)',
+        'lift': '0 10px 25px -4px rgba(12, 19, 31, 0.1), 0 4px 10px -2px rgba(12, 19, 31, 0.04)',
+        'pop': '0 14px 34px -6px rgba(12, 19, 31, 0.12), 0 6px 14px -3px rgba(12, 19, 31, 0.06)',
+        'flame-glow': '0 4px 20px -2px rgba(255, 84, 0, 0.35)',
       },
       animation: {
         'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-        'click-pop': 'clickPop 0.2s ease-out forwards',
+        'upvote-burst': 'upvoteBurst 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+        'pop-in': 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
       keyframes: {
         fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.97)' },
+          '0%': { opacity: '0', transform: 'scale(0.96)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
-        clickPop: {
+        upvoteBurst: {
           '0%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(0.94)' },
-          '100%': { transform: 'scale(1)' },
+          '40%': { transform: 'scale(1.28) rotate(-3deg)' },
+          '70%': { transform: 'scale(0.95) rotate(1deg)' },
+          '100%': { transform: 'scale(1) rotate(0deg)' },
+        },
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.92) translateY(4px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         }
       }
     },

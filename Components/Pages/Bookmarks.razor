@@ -10,7 +10,10 @@
     <!-- Header -->
     <header class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-6 border-b border-oxford-200">
         <div>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-oxford-100 text-oxford-800 border border-oxford-200/80 mb-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 mb-2">
+                <svg class="w-3.5 h-3.5 fill-amber-500 text-amber-500" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
                 Personal Study Syllabus
             </span>
             <h1 class="font-serif text-2xl sm:text-3xl font-bold text-oxford-950 tracking-tight">
@@ -26,13 +29,13 @@
             <div class="flex items-center gap-3">
                 <button type="button"
                         @onclick="CopyAllCitations"
-                        class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-oxford-200 text-oxford-800 text-xs font-semibold rounded shadow-subtle hover:bg-oxford-50">
+                        class="btn-press inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-oxford-300 text-oxford-900 text-xs font-bold rounded shadow-subtle hover:bg-oxford-50 transition-all">
                     @if (isAllCopied)
                     {
-                        <svg class="w-3.5 h-3.5 text-evergreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-evergreen animate-scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span class="text-evergreen font-semibold">Bibliography Copied!</span>
+                        <span class="text-evergreen font-bold">Bibliography Copied!</span>
                     }
                     else
                     {
@@ -42,7 +45,7 @@
                         <span>Export All Citations</span>
                     }
                 </button>
-                <span class="text-xs text-oxford-500 font-mono">@bookmarks.Count items</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-flame text-white font-mono shadow-subtle">@bookmarks.Count</span>
             </div>
         }
     </header>
@@ -50,7 +53,7 @@
     <div class="mt-8">
         @if (bookmarks.Any())
         {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
                 @foreach (var item in bookmarks)
                 {
                     <SourceCard Item="item" />
@@ -70,7 +73,7 @@
                     Pin papers, lectures, or peer notes while searching the hub to assemble your research bibliography.
                 </p>
                 <div class="mt-5">
-                    <a href="" class="btn-press inline-flex items-center gap-1.5 px-4 py-2 bg-oxford-950 hover:bg-oxford-800 text-bone text-xs font-semibold rounded shadow-subtle border border-oxford-800">
+                    <a href="" class="btn-flame inline-flex items-center gap-1.5 px-4 py-2 rounded text-xs">
                         Query the Search Hub
                     </a>
                 </div>

@@ -5,55 +5,61 @@
 <PageTitle>ISourceKO — Academic Discovery Across Literature, Lectures & Notes</PageTitle>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-    <!-- Hero Section in Scholarly Typography (No Purple Gradients) -->
-    <header class="text-center max-w-3xl mx-auto mb-10">
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-semibold bg-oxford-100 text-oxford-800 border border-oxford-200/80 mb-4 tracking-normal">
-            Unified Multi-Corpus Academic Search
+    <!-- Hero Section with Architectural Grid Texture & Dynamic Pop -->
+    <header class="relative text-center max-w-3xl mx-auto mb-10 py-6 px-4 rounded-xl hero-blueprint border border-oxford-200/50 bg-white/40 shadow-subtle">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded text-xs font-bold bg-oxford-950 text-bone shadow-subtle mb-4">
+            <span class="w-1.5 h-1.5 rounded-full bg-flame animate-pulse"></span>
+            Unified Collegiate Research Engine
         </span>
+        
         <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-oxford-950 tracking-tight leading-[1.15]">
             One Search Across Scholarly Papers, Lecture Videos, and Student Notes
         </h1>
-        <p class="mt-3.5 text-sm sm:text-base text-oxford-600 max-w-2xl mx-auto leading-relaxed">
+        
+        <p class="mt-3.5 text-xs sm:text-sm text-oxford-600 max-w-2xl mx-auto leading-relaxed">
             Consolidate your course research. Query ScienceDirect peer-reviewed articles, YouTube academic lectures, Semantic Scholar citations, and student handwritten guides in a single pass.
         </p>
     </header>
 
-    <!-- Search Desk -->
+    <!-- Interactive Search Desk -->
     <section class="max-w-4xl mx-auto mb-12" aria-label="Search form">
         <SearchBar Query="searchQuery" TrendingTopics="trendingTopics" OnSearch="PerformSearch" />
     </section>
 
-    <!-- Results Display -->
+    <!-- Results Section with Dynamic Animated Flow -->
     <section class="max-w-7xl mx-auto" aria-live="polite">
         @if (isLoading)
         {
             <div class="py-6">
                 <div class="flex items-center justify-between mb-4">
-                    <span class="text-xs text-oxford-500 font-mono">Querying registered providers in parallel...</span>
+                    <span class="inline-flex items-center gap-2 text-xs text-oxford-600 font-mono font-medium">
+                        <span class="w-2 h-2 rounded-full bg-flame animate-ping"></span>
+                        Executing parallel queries across registered academic corpora...
+                    </span>
                 </div>
                 <LoadingSkeleton Count="6" />
             </div>
         }
         else if (response != null && !string.IsNullOrWhiteSpace(response.Query))
         {
-            <!-- Results Header & Counts -->
+            <!-- Results Header & Counts with Pop Pills -->
             <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 pb-3 mb-6 border-b border-oxford-200">
                 <div>
                     <h2 class="font-serif text-xl font-bold text-oxford-950">
-                        Results for "<span class="italic text-oxford-800">@response.Query</span>"
+                        Results for "<span class="text-oxford-900 italic font-semibold">@response.Query</span>"
                     </h2>
                     <p class="text-xs text-oxford-500 mt-0.5">
-                        Retrieved @response.TotalResults entries in @(Math.Round(response.ElapsedTime.TotalMilliseconds))ms across @response.CountByPlatform.Count corpora
+                        Retrieved <strong class="text-oxford-900 font-mono">@response.TotalResults</strong> entries in <strong class="text-flame font-mono">@(Math.Round(response.ElapsedTime.TotalMilliseconds))ms</strong> across @response.CountByPlatform.Count corpora
                     </p>
                 </div>
 
-                <!-- Platform Count Pills -->
+                <!-- Platform Count Pills with Tactile Border -->
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     @foreach (var kvp in response.CountByPlatform)
                     {
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-oxford-200/80 rounded shadow-subtle text-oxford-700 font-medium">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-oxford-200 rounded shadow-subtle text-oxford-700 font-medium">
                             <PlatformBadge Platform="kvp.Key" />
-                            <span class="font-mono font-semibold text-oxford-900">@kvp.Value</span>
+                            <span class="font-mono font-bold text-oxford-900">@kvp.Value</span>
                         </span>
                     }
                 </div>
@@ -61,7 +67,7 @@
 
             @if (response.Items.Any())
             {
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
                     @foreach (var item in response.Items)
                     {
                         <SourceCard Item="item" />
@@ -75,7 +81,7 @@
         }
         else
         {
-            <!-- Default Corpus Overview (Archival Legend) -->
+            <!-- Default Corpus Overview with High-Energy Pop Points -->
             <div class="pt-4 pb-8 border-t border-oxford-200/70">
                 <div class="text-center mb-8">
                     <h2 class="font-serif text-xl font-bold text-oxford-950">Integrated Academic Corpora</h2>
@@ -83,40 +89,52 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white p-5 rounded border border-oxford-200/80 shadow-subtle hover:border-oxford-300 transition-colors">
-                        <div class="flex items-center gap-2 mb-2.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-youtube"></span>
-                            <h3 class="font-semibold text-oxford-900 text-sm">YouTube Learning</h3>
+                    <div class="card-lift bg-white p-5 rounded-lg border border-oxford-200/90 shadow-subtle group">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-sm bg-youtube shadow-sm"></span>
+                                <h3 class="font-bold text-oxford-900 text-sm group-hover:text-youtube transition-colors">YouTube Learning</h3>
+                            </div>
+                            <span class="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Video</span>
                         </div>
                         <p class="text-xs text-oxford-600 leading-relaxed">
                             Curated university symposiums, 3Blue1Brown visual explainers, and collegiate lecture series with timestamps.
                         </p>
                     </div>
 
-                    <div class="bg-white p-5 rounded border border-oxford-200/80 shadow-subtle hover:border-oxford-300 transition-colors">
-                        <div class="flex items-center gap-2 mb-2.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-sciencedirect"></span>
-                            <h3 class="font-semibold text-oxford-900 text-sm">ScienceDirect</h3>
+                    <div class="card-lift bg-white p-5 rounded-lg border border-oxford-200/90 shadow-subtle group">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-sm bg-sciencedirect shadow-sm"></span>
+                                <h3 class="font-bold text-oxford-900 text-sm group-hover:text-sciencedirect transition-colors">ScienceDirect</h3>
+                            </div>
+                            <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Peer-Reviewed</span>
                         </div>
                         <p class="text-xs text-oxford-600 leading-relaxed">
                             Peer-reviewed scientific journals, meta-analyses, and empirical study methodologies indexed with DOIs.
                         </p>
                     </div>
 
-                    <div class="bg-white p-5 rounded border border-oxford-200/80 shadow-subtle hover:border-oxford-300 transition-colors">
-                        <div class="flex items-center gap-2 mb-2.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-scholar"></span>
-                            <h3 class="font-semibold text-oxford-900 text-sm">Semantic Scholar</h3>
+                    <div class="card-lift bg-white p-5 rounded-lg border border-oxford-200/90 shadow-subtle group">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-sm bg-scholar shadow-sm"></span>
+                                <h3 class="font-bold text-oxford-900 text-sm group-hover:text-scholar transition-colors">Semantic Scholar</h3>
+                            </div>
+                            <span class="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded">Open Access</span>
                         </div>
                         <p class="text-xs text-oxford-600 leading-relaxed">
                             Citation graph analysis, open-access conference proceedings, and foundational literature reviews.
                         </p>
                     </div>
 
-                    <div class="bg-white p-5 rounded border border-oxford-200/80 shadow-subtle hover:border-oxford-300 transition-colors">
-                        <div class="flex items-center gap-2 mb-2.5">
-                            <span class="w-2.5 h-2.5 rounded-sm bg-evergreen"></span>
-                            <h3 class="font-semibold text-oxford-900 text-sm">Student Submissions</h3>
+                    <div class="card-lift bg-white p-5 rounded-lg border border-oxford-200/90 shadow-subtle group">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-sm bg-evergreen shadow-sm"></span>
+                                <h3 class="font-bold text-oxford-900 text-sm group-hover:text-evergreen transition-colors">Student Exchange</h3>
+                            </div>
+                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Peer Notes</span>
                         </div>
                         <p class="text-xs text-oxford-600 leading-relaxed">
                             Handwritten lecture notes, exam formula cheat sheets, and verified study tools uploaded by peer students.

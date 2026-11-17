@@ -6,17 +6,18 @@
 @if (Item.Platform == SourcePlatform.YouTube)
 {
     <!-- VIDEO LECTURE DOSSIER -->
-    <article class="card-lift bg-white rounded border border-oxford-200/90 shadow-subtle p-4 flex flex-col justify-between group">
+    <article class="card-lift bg-white rounded-lg border border-oxford-200/90 shadow-subtle p-4 flex flex-col justify-between group relative overflow-hidden">
         <div>
             <!-- Video Thumbnail Frame with Hover Zoom & Duration Pill -->
             @if (!string.IsNullOrEmpty(Item.ThumbnailUrl))
             {
-                <div class="relative w-full aspect-video rounded overflow-hidden mb-3 bg-oxford-100 img-zoom-frame border border-oxford-200/60">
+                <div class="relative w-full aspect-video rounded overflow-hidden mb-3 bg-oxford-100 img-zoom-frame border border-oxford-200/60 shadow-inner">
                     <img src="@Item.ThumbnailUrl" alt="@Item.Title" class="w-full h-full object-cover" loading="lazy" />
                     <div class="absolute inset-0 bg-oxford-950/20 group-hover:bg-transparent transition-colors"></div>
+                    
                     @if (Item.Metadata.TryGetValue("Duration", out var duration))
                     {
-                        <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-oxford-950/80 text-bone text-[11px] font-mono font-medium tracking-tight">
+                        <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-oxford-950/85 backdrop-blur-sm text-bone text-[11px] font-mono font-semibold tracking-tight shadow-subtle">
                             @duration
                         </span>
                     }
@@ -33,8 +34,8 @@
             }
 
             <!-- Video Title in Editorial Serif -->
-            <h3 class="font-serif text-base font-semibold text-oxford-950 leading-snug">
-                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-oxford-400 underline-offset-2 flex items-start gap-1">
+            <h3 class="font-serif text-base font-bold text-oxford-950 leading-snug group-hover:text-flame transition-colors">
+                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-flame underline-offset-2 flex items-start gap-1">
                     <span>@Item.Title</span>
                 </a>
             </h3>
@@ -47,26 +48,29 @@
 
         <!-- Video Footer with Channel, Metrics & Actions -->
         <div class="mt-4 pt-3 border-t border-oxford-100 flex items-center justify-between text-xs text-oxford-500">
-            <div class="flex items-center gap-2 truncate">
-                <span class="font-medium text-oxford-800 truncate">@Item.AuthorOrPublisher</span>
+            <div class="flex items-center gap-1.5 truncate">
+                <span class="font-semibold text-oxford-800 truncate">@Item.AuthorOrPublisher</span>
                 @if (!string.IsNullOrEmpty(Item.MetricsInfo))
                 {
                     <span class="text-oxford-300">•</span>
-                    <span class="text-oxford-500 text-[11px] shrink-0">@Item.MetricsInfo</span>
+                    <span class="text-oxford-500 text-[11px] shrink-0 font-medium">@Item.MetricsInfo</span>
                 }
             </div>
 
-            <div class="flex items-center gap-1 shrink-0">
+            <div class="flex items-center gap-1.5 shrink-0">
                 <button type="button"
                         @onclick="ToggleBookmark"
                         title="@(isBookmarked ? "Remove Bookmark" : "Save Bookmark")"
-                        class="btn-press p-1.5 text-oxford-400 hover:text-amber-600 rounded transition-colors">
-                    <svg class="w-4 h-4 @(isBookmarked ? "fill-amber-500 text-amber-500" : "fill-none")" stroke="currentColor" viewBox="0 0 24 24">
+                        class="btn-press p-1.5 text-oxford-400 hover:text-amber-500 rounded transition-colors">
+                    <svg class="w-4 h-4 @(isBookmarked ? "fill-amber-500 text-amber-500 animate-scale-in" : "fill-none")" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
                 </button>
-                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="btn-press px-2.5 py-1 bg-oxford-50 hover:bg-oxford-100 text-oxford-800 font-medium text-xs rounded border border-oxford-200">
-                    Watch
+                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="btn-press px-3 py-1 bg-oxford-900 hover:bg-oxford-800 text-white font-medium text-xs rounded border border-oxford-800 shadow-subtle flex items-center gap-1">
+                    <span>Watch</span>
+                    <svg class="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
                 </a>
             </div>
         </div>
@@ -75,7 +79,17 @@
 else
 {
     <!-- ACADEMIC RESEARCH DOSSIER (ScienceDirect, Semantic Scholar, etc.) -->
-    <article class="card-lift bg-white rounded border border-oxford-200/90 shadow-subtle p-5 flex flex-col justify-between">
+    <article class="card-lift bg-white rounded-lg border border-oxford-200/90 shadow-subtle p-5 flex flex-col justify-between group relative overflow-hidden">
+        <!-- High-Citation Visual Pop Indicator -->
+        @if (Item.MetricsInfo != null && (Item.MetricsInfo.Contains("citations") || Item.MetricsInfo.Contains("Patents")))
+        {
+            <div class="absolute top-0 right-0">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-bl bg-amber-500/10 border-l border-b border-amber-300 text-amber-900 text-[10px] font-bold tracking-tight">
+                    ★ Academic Highlight
+                </span>
+            </div>
+        }
+
         <div>
             <!-- Header: Platform Badge, Field, & Bookmark Button -->
             <div class="flex items-center justify-between gap-3 mb-2.5">
@@ -83,14 +97,14 @@ else
                     <PlatformBadge Platform="Item.Platform" />
                     @if (Item.Metadata.TryGetValue("DOI", out var doi))
                     {
-                        <span class="text-[11px] font-mono text-oxford-500">DOI:@doi</span>
+                        <span class="text-[11px] font-mono text-oxford-400 truncate max-w-[140px]">DOI:@doi</span>
                     }
                 </div>
 
                 <div class="flex items-center gap-1.5">
                     @if (Item.Field != AcademicField.General)
                     {
-                        <span class="text-[11px] px-2 py-0.5 bg-oxford-50 text-oxford-600 rounded border border-oxford-200/50 font-medium">
+                        <span class="text-[11px] px-2 py-0.5 bg-oxford-50 text-oxford-600 rounded border border-oxford-200 font-medium">
                             @Item.Field.ToString()
                         </span>
                     }
@@ -98,8 +112,8 @@ else
                     <button type="button"
                             @onclick="ToggleBookmark"
                             title="@(isBookmarked ? "Remove Bookmark" : "Save Bookmark")"
-                            class="btn-press p-1.5 text-oxford-400 hover:text-amber-600 rounded transition-colors">
-                        <svg class="w-4 h-4 @(isBookmarked ? "fill-amber-500 text-amber-500" : "fill-none")" stroke="currentColor" viewBox="0 0 24 24">
+                            class="btn-press p-1.5 text-oxford-400 hover:text-amber-500 rounded transition-colors">
+                        <svg class="w-4 h-4 @(isBookmarked ? "fill-amber-500 text-amber-500 animate-scale-in" : "fill-none")" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                         </svg>
                     </button>
@@ -107,18 +121,18 @@ else
             </div>
 
             <!-- Paper Title in Scholarly Serif -->
-            <h3 class="font-serif text-lg font-semibold text-oxford-950 leading-snug">
-                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-oxford-400 underline-offset-2">
+            <h3 class="font-serif text-lg font-bold text-oxford-950 leading-snug group-hover:text-academic transition-colors">
+                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-academic underline-offset-2">
                     @Item.Title
                 </a>
             </h3>
 
-            <!-- Journal Attribution & Publication Year -->
+            <!-- Journal Attribution & Year -->
             <div class="mt-1 text-xs text-oxford-500 font-medium">
                 <span>@Item.AuthorOrPublisher</span>
                 @if (Item.PublishedDate.HasValue)
                 {
-                    <span> • @Item.PublishedDate.Value.ToString("yyyy")</span>
+                    <span class="text-oxford-400"> • @Item.PublishedDate.Value.ToString("yyyy")</span>
                 }
             </div>
 
@@ -133,7 +147,7 @@ else
                 <div class="mt-3 flex flex-wrap gap-1.5">
                     @foreach (var tag in Item.Tags.Take(3))
                     {
-                        <span class="text-[11px] bg-bone text-oxford-600 border border-oxford-200/60 px-2 py-0.5 rounded">
+                        <span class="text-[11px] bg-bone text-oxford-600 border border-oxford-200 px-2 py-0.5 rounded font-medium">
                             #@tag
                         </span>
                     }
@@ -143,21 +157,22 @@ else
 
         <!-- Academic Actions Footer -->
         <div class="mt-5 pt-3.5 border-t border-oxford-100 flex items-center justify-between text-xs">
-            <span class="text-oxford-500 text-[11px] font-medium">
+            <span class="text-oxford-500 text-[11px] font-semibold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-sciencedirect"></span>
                 @(Item.MetricsInfo ?? "Scholarly Record")
             </span>
 
             <div class="flex items-center gap-2">
-                <!-- Copy Citation Button with Dynamic Checkmark Feedback -->
+                <!-- Copy Citation Button with Animated Checkmark Pop -->
                 <button type="button"
                         @onclick="CopyCitation"
-                        class="btn-press inline-flex items-center gap-1 px-2 py-1 bg-oxford-50 hover:bg-oxford-100 text-oxford-700 rounded border border-oxford-200 text-xs font-medium">
+                        class="btn-press inline-flex items-center gap-1.5 px-2.5 py-1 bg-oxford-50 hover:bg-oxford-100 text-oxford-800 rounded border border-oxford-200 text-xs font-semibold transition-all">
                     @if (isCopied)
                     {
-                        <svg class="w-3.5 h-3.5 text-evergreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3.5 h-3.5 text-evergreen animate-scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span class="text-evergreen font-semibold">Copied!</span>
+                        <span class="text-evergreen font-bold">Copied!</span>
                     }
                     else
                     {
@@ -172,7 +187,7 @@ else
                    target="_blank"
                    rel="noopener noreferrer"
                    class="btn-press inline-flex items-center gap-1 px-3 py-1 bg-oxford-950 text-bone hover:bg-oxford-800 rounded font-medium text-xs shadow-subtle">
-                    <span>Read Paper</span>
+                    <span>Full Text</span>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
@@ -207,9 +222,6 @@ else
             isCopied = false;
             StateHasChanged();
         }
-        catch
-        {
-            // Fallback
-        }
+        catch { }
     }
 }

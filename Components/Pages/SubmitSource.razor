@@ -4,95 +4,92 @@
 @inject IFileStorageService StorageService
 @inject NavigationManager Navigation
 
-<PageTitle>Share a Source or Study Note - ISourceKO</PageTitle>
+<PageTitle>Deposit Study Source or Handwritten Notes — ISourceKO</PageTitle>
 
 <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+    <!-- Header -->
     <div class="mb-8">
-        <a href="community" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors mb-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="community" class="btn-press inline-flex items-center gap-1.5 text-xs font-semibold text-oxford-500 hover:text-oxford-900 transition-colors mb-3">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Student Sources
+            Back to Peer Archive
         </a>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Share a Source with Fellow Students
+        <h1 class="font-serif text-2xl sm:text-3xl font-bold text-oxford-950 tracking-tight">
+            Deposit a Study Resource into the Archive
         </h1>
-        <p class="text-sm text-slate-600 mt-1">
-            Contribute your handwritten notes, diagrams, cheat sheets, or links to valuable academic resources.
+        <p class="text-xs sm:text-sm text-oxford-600 mt-1 leading-relaxed">
+            Contribute high-yield handwritten study summaries, exam formulas, or direct links to academic tools for your fellow students.
         </p>
     </div>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3">
-            <svg class="w-5 h-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="mb-6 p-4 rounded bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2.5 animate-scale-in">
+            <svg class="w-4 h-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>@errorMessage</span>
         </div>
     }
 
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+    <div class="bg-white rounded-lg border border-oxford-200/90 shadow-subtle p-6 sm:p-8">
         <EditForm Model="model" OnValidSubmit="HandleSubmit">
             <DataAnnotationsValidator />
 
-            <!-- Submission Type Toggle -->
+            <!-- Submission Format Toggle (Segmented control) -->
             <div class="mb-6">
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    What are you sharing?
+                <label class="block text-xs font-bold text-oxford-900 mb-2">
+                    Deposit Format
                 </label>
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button"
-                            @onclick="() => SetType(SubmissionType.Link)"
-                            class="p-4 rounded-xl border-2 text-left transition-all @(model.Type == SubmissionType.Link ? "border-indigo-600 bg-indigo-50/50 text-indigo-900" : "border-slate-200 hover:border-slate-300 text-slate-700")">
-                        <div class="flex items-center gap-2 font-bold text-sm">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                            </svg>
-                            Web Link
+                            @onclick="() => SetType(SubmissionType.ImageNote)"
+                            class="interactive-tab p-3.5 rounded border text-left transition-all @(model.Type == SubmissionType.ImageNote ? "border-oxford-950 bg-oxford-50 text-oxford-950 shadow-subtle ring-1 ring-oxford-900" : "border-oxford-200 hover:border-oxford-300 text-oxford-700 bg-white")">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="text-sm">📷</span>
+                            <span>Handwritten Notes / Diagram</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">Interactive tool, simulation, or external reference</p>
+                        <p class="text-[11px] text-oxford-500 mt-1">Photo of study summary, formula sheet, or concept map</p>
                     </button>
 
                     <button type="button"
-                            @onclick="() => SetType(SubmissionType.ImageNote)"
-                            class="p-4 rounded-xl border-2 text-left transition-all @(model.Type == SubmissionType.ImageNote ? "border-emerald-600 bg-emerald-50/50 text-emerald-900" : "border-slate-200 hover:border-slate-300 text-slate-700")">
-                        <div class="flex items-center gap-2 font-bold text-sm">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Own Picture / Notes
+                            @onclick="() => SetType(SubmissionType.Link)"
+                            class="interactive-tab p-3.5 rounded border text-left transition-all @(model.Type == SubmissionType.Link ? "border-oxford-950 bg-oxford-50 text-oxford-950 shadow-subtle ring-1 ring-oxford-900" : "border-oxford-200 hover:border-oxford-300 text-oxford-700 bg-white")">
+                        <div class="flex items-center gap-2 font-bold text-xs">
+                            <span class="text-sm">🔗</span>
+                            <span>Online Resource Link</span>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">Photo of handwritten notes, formula sheet, or diagram</p>
+                        <p class="text-[11px] text-oxford-500 mt-1">Interactive visualizer, simulation, or paper link</p>
                     </button>
                 </div>
             </div>
 
             <!-- Title -->
             <div class="mb-5">
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Title *</label>
-                <InputText @bind-Value="model.Title" placeholder="e.g. Graph Algorithms Big-O Handwritten Summary" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <ValidationMessage For="@(() => model.Title)" class="text-red-500 text-xs mt-1" />
+                <label class="block text-xs font-semibold text-oxford-800 mb-1">Title *</label>
+                <InputText @bind-Value="model.Title" placeholder="e.g. Graph Algorithms & Dijkstra Complexity Summary Sheet" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950" />
+                <ValidationMessage For="@(() => model.Title)" class="text-red-600 text-[11px] mt-1" />
             </div>
 
             <!-- Conditional Link vs Image Upload -->
             @if (model.Type == SubmissionType.Link)
             {
                 <div class="mb-5">
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Source URL *</label>
-                    <InputText @bind-Value="model.SourceUrl" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Source URL *</label>
+                    <InputText @bind-Value="model.SourceUrl" placeholder="https://..." class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950" />
                 </div>
             }
             else
             {
                 <div class="mb-5">
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Photo / Diagram *</label>
-                    <div class="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-6 text-center bg-slate-50 transition-colors">
-                        <InputFile OnChange="HandleFileSelected" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100" />
-                        <p class="text-[11px] text-slate-400 mt-2">Supported formats: JPG, PNG, WebP (Max 5MB)</p>
+                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Upload Note Photo / Diagram *</label>
+                    <div class="border border-dashed border-oxford-300 hover:border-flame rounded p-5 text-center bg-bone transition-colors group">
+                        <InputFile OnChange="HandleFileSelected" accept="image/*" class="block w-full text-xs text-oxford-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-oxford-300 file:text-xs file:font-semibold file:bg-white file:text-oxford-800 hover:file:bg-oxford-50 cursor-pointer" />
+                        <p class="text-[11px] text-oxford-400 mt-2">Accepted formats: JPG, PNG, WebP (Max 10MB)</p>
                         @if (!string.IsNullOrEmpty(uploadedPreviewUrl))
                         {
-                            <div class="mt-3 inline-block relative rounded-lg overflow-hidden border border-slate-200 max-h-36">
+                            <div class="mt-3 inline-block relative rounded overflow-hidden border border-oxford-200 max-h-36 shadow-subtle">
                                 <img src="@uploadedPreviewUrl" alt="Preview" class="h-32 object-contain" />
                             </div>
                         }
@@ -103,8 +100,8 @@
             <!-- Discipline & Details -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Academic Discipline</label>
-                    <InputSelect @bind-Value="model.Field" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Academic Discipline</label>
+                    <InputSelect @bind-Value="model.Field" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-2 focus:ring-oxford-950 cursor-pointer">
                         <option value="@AcademicField.ComputerScience">Computer Science</option>
                         <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
                         <option value="@AcademicField.Mathematics">Mathematics</option>
@@ -116,35 +113,35 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Your Name / Alias *</label>
-                    <InputText @bind-Value="model.StudentName" placeholder="e.g. Alex Chen" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    <ValidationMessage For="@(() => model.StudentName)" class="text-red-500 text-xs mt-1" />
+                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Student Name / Alias *</label>
+                    <InputText @bind-Value="model.StudentName" placeholder="e.g. Alex Chen" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950" />
+                    <ValidationMessage For="@(() => model.StudentName)" class="text-red-600 text-[11px] mt-1" />
                 </div>
             </div>
 
             <div class="mb-5">
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Degree Program / School (Optional)</label>
-                <InputText @bind-Value="model.SchoolOrProgram" placeholder="e.g. BS Computer Science - 2nd Year" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <label class="block text-xs font-semibold text-oxford-800 mb-1">Course / Year Level (Optional)</label>
+                <InputText @bind-Value="model.SchoolOrProgram" placeholder="e.g. BS Computer Science • Year 2" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950" />
             </div>
 
             <!-- Description -->
             <div class="mb-5">
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Description & Study Tips *</label>
-                <InputTextArea @bind-Value="model.Description" rows="4" placeholder="Briefly describe what this note covers and how other students can use it for studying..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                <ValidationMessage For="@(() => model.Description)" class="text-red-500 text-xs mt-1" />
+                <label class="block text-xs font-semibold text-oxford-800 mb-1">Description & Study Guidance *</label>
+                <InputTextArea @bind-Value="model.Description" rows="4" placeholder="Explain the key concepts covered, formulas highlighted, and how other students should use this to prepare for exams..." class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950" />
+                <ValidationMessage For="@(() => model.Description)" class="text-red-600 text-[11px] mt-1" />
             </div>
 
             <!-- Tags -->
             <div class="mb-6">
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Tags (Comma-separated)</label>
-                <input type="text" @bind="tagsRaw" placeholder="Algorithms, Midterms, Graph Theory" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <label class="block text-xs font-semibold text-oxford-800 mb-1">Tags (Comma-separated)</label>
+                <input type="text" @bind="tagsRaw" placeholder="Algorithms, Midterms, Graph Theory" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950" />
             </div>
 
-            <!-- Submit Button -->
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                <a href="community" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800">Cancel</a>
-                <button type="submit" disabled="@isSubmitting" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-sm transition-all duration-150">
-                    @(isSubmitting ? "Publishing..." : "Publish Source")
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-oxford-100">
+                <a href="community" class="btn-press px-4 py-2 text-xs font-medium text-oxford-600 hover:text-oxford-900">Cancel</a>
+                <button type="submit" disabled="@isSubmitting" class="btn-flame px-5 py-2 disabled:opacity-50 text-white font-semibold text-xs rounded shadow-subtle">
+                    @(isSubmitting ? "Depositing..." : "Deposit into Archive")
                 </button>
             </div>
         </EditForm>
@@ -152,7 +149,7 @@
 </div>
 
 @code {
-    private StudentSubmission model = new();
+    private StudentSubmission model = new() { Type = SubmissionType.ImageNote };
     private string tagsRaw = string.Empty;
     private string? errorMessage;
     private bool isSubmitting = false;
@@ -176,7 +173,7 @@
 
         if (model.Type == SubmissionType.Link && string.IsNullOrWhiteSpace(model.SourceUrl))
         {
-            errorMessage = "Please enter a valid URL for your shared link.";
+            errorMessage = "Please enter a valid URL for your shared resource.";
             return;
         }
 
@@ -192,7 +189,7 @@
         {
             if (selectedFile != null)
             {
-                using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
+                using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
                 var path = await StorageService.SaveImageAsync(stream, selectedFile.Name);
                 model.ImagePath = path;
             }
@@ -210,7 +207,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to save submission: {ex.Message}";
+            errorMessage = $"Failed to deposit submission: {ex.Message}";
         }
         finally
         {

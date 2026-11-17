@@ -3,26 +3,96 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Seamless Dynamic Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(12, 19, 31, 0.15);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(12, 19, 31, 0.4);
+  }
+  
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(12, 19, 31, 0.2) transparent;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-800 antialiased min-h-screen font-sans;
+    @apply bg-bone text-oxford antialiased min-h-screen font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  /* Complete Scrollbar Hiding Utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
 @layer components {
-  .badge-youtube {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200;
-  }
-  .badge-sciencedirect {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200;
-  }
-  .badge-semanticscholar {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200;
-  }
-  .badge-community {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200;
+  /* Dynamic Flow & Micro-Interactions */
+  .card-lift {
+    @apply transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lift hover:border-oxford-400 active:translate-y-0 active:scale-[0.99];
   }
 
-  .card-hover {
-    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
+  .btn-press {
+    @apply transition-all duration-150 ease-out active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-oxford-900 focus-visible:ring-offset-2;
+  }
+
+  .btn-flame {
+    @apply bg-flame hover:bg-flame-hover active:bg-[#C94200] text-white font-semibold transition-all duration-150 shadow-subtle hover:shadow-flame-glow active:scale-[0.96];
+  }
+
+  .interactive-tab {
+    @apply transition-all duration-150 active:scale-[0.97] select-none;
+  }
+
+  .img-zoom-frame {
+    @apply overflow-hidden relative;
+  }
+  .img-zoom-frame img {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .img-zoom-frame:hover img {
+    @apply scale-[1.04];
+  }
+
+  /* Pop Accent Elements */
+  .pop-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-flame text-white shadow-subtle tracking-tight;
+  }
+  
+  .pop-indicator {
+    @apply w-2 h-2 rounded-full bg-flame animate-pulse;
+  }
+
+  /* Academic Ruled Note Styling */
+  .notebook-rule {
+    background-image: linear-gradient(to bottom, transparent 96%, #E2E8F0 96%);
+    background-size: 100% 1.75rem;
+  }
+
+  /* Architectural Grid Background Texture (Subtle, non-distracting) */
+  .hero-blueprint {
+    background-image: radial-gradient(rgba(12, 19, 31, 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }

@@ -17,15 +17,23 @@
     <HeadOutlet />
 </head>
 
-<body class="bg-[#FBFBF9] text-[#0C131F] font-sans antialiased min-h-screen selection:bg-flame/15 selection:text-oxford-950">
+<body class="bg-[#FBFBF9] text-[#0C131F] font-sans antialiased min-h-screen selection:bg-flame/15 selection:text-oxford-950 overflow-x-hidden">
     <!-- Dynamic Reading Scroll Progress Bar -->
     <div id="reading-progress" class="fixed top-0 left-0 h-[2.5px] bg-gradient-to-r from-flame via-amber-500 to-academic z-50 transition-all duration-75 pointer-events-none" style="width: 0%"></div>
 
     <Routes />
     <ReconnectModal />
+    
+    <!-- Core Blazor Framework -->
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 
-    <!-- Dynamic Scroll Listener Script (Seamless Progress & Header Flow) -->
+    <!-- 60fps Motion Engine: Lenis Smooth Scroll + GSAP + ScrollTrigger -->
+    <script src="js/lenis.min.js"></script>
+    <script src="js/gsap.min.js"></script>
+    <script src="js/ScrollTrigger.min.js"></script>
+    <script src="js/animations.js"></script>
+
+    <!-- Blazor Navigation & Mutation Re-initialization Hook -->
     <script>
         (function() {
             let ticking = false;
@@ -44,6 +52,13 @@
                     ticking = true;
                 }
             }, { passive: true });
+
+            // Re-trigger animations on Blazor enhanced navigation
+            document.addEventListener('blazor:navigated', function() {
+                if (window.initISourceKOAnimations) {
+                    setTimeout(window.initISourceKOAnimations, 100);
+                }
+            });
         })();
     </script>
 </body>

@@ -3,26 +3,56 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased min-h-screen font-sans;
+    @apply bg-bone text-oxford antialiased min-h-screen font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 @layer components {
-  .badge-youtube {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200;
-  }
-  .badge-sciencedirect {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200;
-  }
-  .badge-semanticscholar {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200;
-  }
-  .badge-community {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200;
+  /* Micro-interactions: Hover, Click, Motion */
+  .card-lift {
+    @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lift hover:border-oxford-300 active:translate-y-0;
   }
 
-  .card-hover {
-    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
+  .btn-press {
+    @apply transition-all duration-150 ease-out active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-oxford-900 focus-visible:ring-offset-2;
+  }
+
+  .interactive-tab {
+    @apply transition-all duration-150 active:scale-[0.98] select-none;
+  }
+
+  .img-zoom-frame {
+    @apply overflow-hidden;
+  }
+  .img-zoom-frame img {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .img-zoom-frame:hover img {
+    @apply scale-[1.03];
+  }
+
+  /* Academic Badge Standards */
+  .badge-academic-crimson {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-youtube-light text-youtube border border-red-200;
+  }
+  .badge-academic-ochre {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-sciencedirect-light text-sciencedirect-dark border border-amber-200;
+  }
+  .badge-academic-scholar {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-scholar-light text-scholar-dark border border-sky-200;
+  }
+  .badge-academic-evergreen {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-evergreen-light text-evergreen-dark border border-emerald-200;
+  }
+
+  /* Academic Ruled Note Styling for Student Submissions */
+  .notebook-rule {
+    background-image: linear-gradient(to bottom, transparent 96%, #E2E8F0 96%);
+    background-size: 100% 1.75rem;
   }
 }

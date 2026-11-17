@@ -1,0 +1,129 @@
+@inject IBookmarkService BookmarkService
+@implements IDisposable
+
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <!-- Brand Logo & Tagline -->
+            <div class="flex items-center gap-3">
+                <a href="" class="flex items-center gap-2.5 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100 group-hover:scale-105 transition-transform">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-violet-700 tracking-tight">ISourceKO</span>
+                        <span class="block text-[10px] font-medium text-slate-400 tracking-wider uppercase -mt-1">Student Source Hub</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Desktop Navigation Links -->
+            <div class="hidden md:flex items-center gap-1">
+                <NavLink href="" Match="NavLinkMatch.All" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors" ActiveClass="!text-indigo-600 !bg-indigo-50/70 font-semibold">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Search Hub
+                    </span>
+                </NavLink>
+
+                <NavLink href="community" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors" ActiveClass="!text-indigo-600 !bg-indigo-50/70 font-semibold">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Student Notes & Links
+                    </span>
+                </NavLink>
+
+                <NavLink href="bookmarks" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition-colors" ActiveClass="!text-indigo-600 !bg-indigo-50/70 font-semibold">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        Saved Sources
+                        @if (bookmarkCount > 0)
+                        {
+                            <span class="ml-1 px-1.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-600 text-white">@bookmarkCount</span>
+                        }
+                    </span>
+                </NavLink>
+            </div>
+
+            <!-- Action Button: Share a Source -->
+            <div class="hidden md:flex items-center gap-3">
+                <a href="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-150">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Share Note / Link</span>
+                </a>
+            </div>
+
+            <!-- Mobile menu button -->
+            <div class="flex items-center md:hidden">
+                <button type="button" @onclick="ToggleMobileMenu" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        @if (isMobileMenuOpen)
+                        {
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        }
+                        else
+                        {
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        }
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile menu panel -->
+    @if (isMobileMenuOpen)
+    {
+        <div class="md:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-1">
+            <NavLink href="" Match="NavLinkMatch.All" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-50" @onclick="ToggleMobileMenu">
+                Search Hub
+            </NavLink>
+            <NavLink href="community" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-50" @onclick="ToggleMobileMenu">
+                Student Notes & Links
+            </NavLink>
+            <NavLink href="bookmarks" class="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-50" @onclick="ToggleMobileMenu">
+                Saved Sources (@bookmarkCount)
+            </NavLink>
+            <div class="pt-2">
+                <a href="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium text-sm" @onclick="ToggleMobileMenu">
+                    + Share Note / Link
+                </a>
+            </div>
+        </div>
+    }
+</nav>
+
+@code {
+    private bool isMobileMenuOpen = false;
+    private int bookmarkCount => BookmarkService.GetBookmarks().Count;
+
+    protected override void OnInitialized()
+    {
+        BookmarkService.OnBookmarksChanged += HandleBookmarksChanged;
+    }
+
+    private void HandleBookmarksChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleMobileMenu()
+    {
+        isMobileMenuOpen = !isMobileMenuOpen;
+    }
+
+    public void Dispose()
+    {
+        BookmarkService.OnBookmarksChanged -= HandleBookmarksChanged;
+    }
+}

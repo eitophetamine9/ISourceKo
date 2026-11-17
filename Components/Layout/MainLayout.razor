@@ -1,0 +1,39 @@
+@inherits LayoutComponentBase
+
+<div class="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800">
+    <!-- Navbar Header -->
+    <NavMenu />
+
+    <!-- Main Dynamic Content -->
+    <main class="flex-1 pb-16">
+        @Body
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                        IS
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-800 text-sm">ISourceKO</span>
+                        <p class="text-xs text-slate-500">Student Academic Source Hub & Peer Contributions</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500">
+                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> YouTube Learning</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500"></span> ScienceDirect</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Semantic Scholar</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Student Community</span>
+                </div>
+
+                <div class="text-xs text-slate-400">
+                    Built with Blazor Web & Tailwind CSS
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>

@@ -1,0 +1,220 @@
+@page "/submit"
+@rendermode InteractiveServer
+@inject IStudentSubmissionService SubmissionService
+@inject IFileStorageService StorageService
+@inject NavigationManager Navigation
+
+<PageTitle>Share a Source or Study Note - ISourceKO</PageTitle>
+
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+    <div class="mb-8">
+        <a href="community" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors mb-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Student Sources
+        </a>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Share a Source with Fellow Students
+        </h1>
+        <p class="text-sm text-slate-600 mt-1">
+            Contribute your handwritten notes, diagrams, cheat sheets, or links to valuable academic resources.
+        </p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-3">
+            <svg class="w-5 h-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>@errorMessage</span>
+        </div>
+    }
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+        <EditForm Model="model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <!-- Submission Type Toggle -->
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    What are you sharing?
+                </label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button"
+                            @onclick="() => SetType(SubmissionType.Link)"
+                            class="p-4 rounded-xl border-2 text-left transition-all @(model.Type == SubmissionType.Link ? "border-indigo-600 bg-indigo-50/50 text-indigo-900" : "border-slate-200 hover:border-slate-300 text-slate-700")">
+                        <div class="flex items-center gap-2 font-bold text-sm">
+                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            Web Link
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Interactive tool, simulation, or external reference</p>
+                    </button>
+
+                    <button type="button"
+                            @onclick="() => SetType(SubmissionType.ImageNote)"
+                            class="p-4 rounded-xl border-2 text-left transition-all @(model.Type == SubmissionType.ImageNote ? "border-emerald-600 bg-emerald-50/50 text-emerald-900" : "border-slate-200 hover:border-slate-300 text-slate-700")">
+                        <div class="flex items-center gap-2 font-bold text-sm">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Own Picture / Notes
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Photo of handwritten notes, formula sheet, or diagram</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div class="mb-5">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Title *</label>
+                <InputText @bind-Value="model.Title" placeholder="e.g. Graph Algorithms Big-O Handwritten Summary" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <ValidationMessage For="@(() => model.Title)" class="text-red-500 text-xs mt-1" />
+            </div>
+
+            <!-- Conditional Link vs Image Upload -->
+            @if (model.Type == SubmissionType.Link)
+            {
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Source URL *</label>
+                    <InputText @bind-Value="model.SourceUrl" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+            }
+            else
+            {
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Upload Photo / Diagram *</label>
+                    <div class="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-xl p-6 text-center bg-slate-50 transition-colors">
+                        <InputFile OnChange="HandleFileSelected" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100" />
+                        <p class="text-[11px] text-slate-400 mt-2">Supported formats: JPG, PNG, WebP (Max 5MB)</p>
+                        @if (!string.IsNullOrEmpty(uploadedPreviewUrl))
+                        {
+                            <div class="mt-3 inline-block relative rounded-lg overflow-hidden border border-slate-200 max-h-36">
+                                <img src="@uploadedPreviewUrl" alt="Preview" class="h-32 object-contain" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Discipline & Details -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Academic Discipline</label>
+                    <InputSelect @bind-Value="model.Field" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                        <option value="@AcademicField.ComputerScience">Computer Science</option>
+                        <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
+                        <option value="@AcademicField.Mathematics">Mathematics</option>
+                        <option value="@AcademicField.Engineering">Engineering</option>
+                        <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
+                        <option value="@AcademicField.SocialSciences">Social Sciences</option>
+                        <option value="@AcademicField.BusinessAndEconomics">Business & Economics</option>
+                    </InputSelect>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Your Name / Alias *</label>
+                    <InputText @bind-Value="model.StudentName" placeholder="e.g. Alex Chen" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <ValidationMessage For="@(() => model.StudentName)" class="text-red-500 text-xs mt-1" />
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Degree Program / School (Optional)</label>
+                <InputText @bind-Value="model.SchoolOrProgram" placeholder="e.g. BS Computer Science - 2nd Year" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <!-- Description -->
+            <div class="mb-5">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Description & Study Tips *</label>
+                <InputTextArea @bind-Value="model.Description" rows="4" placeholder="Briefly describe what this note covers and how other students can use it for studying..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <ValidationMessage For="@(() => model.Description)" class="text-red-500 text-xs mt-1" />
+            </div>
+
+            <!-- Tags -->
+            <div class="mb-6">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Tags (Comma-separated)</label>
+                <input type="text" @bind="tagsRaw" placeholder="Algorithms, Midterms, Graph Theory" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <a href="community" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800">Cancel</a>
+                <button type="submit" disabled="@isSubmitting" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-sm transition-all duration-150">
+                    @(isSubmitting ? "Publishing..." : "Publish Source")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private StudentSubmission model = new();
+    private string tagsRaw = string.Empty;
+    private string? errorMessage;
+    private bool isSubmitting = false;
+    private IBrowserFile? selectedFile;
+    private string? uploadedPreviewUrl;
+
+    private void SetType(SubmissionType type)
+    {
+        model.Type = type;
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        uploadedPreviewUrl = null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+
+        if (model.Type == SubmissionType.Link && string.IsNullOrWhiteSpace(model.SourceUrl))
+        {
+            errorMessage = "Please enter a valid URL for your shared link.";
+            return;
+        }
+
+        if (model.Type == SubmissionType.ImageNote && selectedFile == null && string.IsNullOrEmpty(model.ImagePath))
+        {
+            errorMessage = "Please choose an image file (handwritten note or diagram) to upload.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            if (selectedFile != null)
+            {
+                using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
+                var path = await StorageService.SaveImageAsync(stream, selectedFile.Name);
+                model.ImagePath = path;
+            }
+
+            if (!string.IsNullOrWhiteSpace(tagsRaw))
+            {
+                model.Tags = tagsRaw
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct()
+                    .ToList();
+            }
+
+            await SubmissionService.AddSubmissionAsync(model);
+            Navigation.NavigateTo("community");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save submission: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

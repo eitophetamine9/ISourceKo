@@ -1,0 +1,89 @@
+@page "/bookmarks"
+@rendermode InteractiveServer
+@inject IBookmarkService BookmarkService
+@implements IDisposable
+
+<PageTitle>Saved Sources & Bookmarks - ISourceKO</PageTitle>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-semibold mb-2 border border-amber-200/80">
+                <svg class="w-3.5 h-3.5 fill-amber-500 text-amber-500" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                Personal Study Collection
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                My Saved Sources
+            </h1>
+            <p class="text-sm text-slate-600 mt-1">
+                Quickly access papers, videos, and peer notes you've bookmarked for your research or exam revision.
+            </p>
+        </div>
+
+        @if (bookmarks.Any())
+        {
+            <div class="text-xs text-slate-500">
+                <span class="font-bold text-slate-800">@bookmarks.Count</span> items saved
+            </div>
+        }
+    </div>
+
+    <div class="mt-8">
+        @if (bookmarks.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach (var item in bookmarks)
+                {
+                    <SourceCard Item="item" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="py-16 text-center max-w-md mx-auto">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-semibold text-slate-900">No saved sources yet</h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    When you search for topics on the home page, click the bookmark icon on any paper, video, or note card to pin it here.
+                </p>
+                <div class="mt-6">
+                    <a href="" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors">
+                        Go to Search Hub
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<SourceItem> bookmarks = new();
+
+    protected override void OnInitialized()
+    {
+        BookmarkService.OnBookmarksChanged += HandleBookmarksChanged;
+        LoadBookmarks();
+    }
+
+    private void LoadBookmarks()
+    {
+        bookmarks = BookmarkService.GetBookmarks().ToList();
+    }
+
+    private void HandleBookmarksChanged()
+    {
+        LoadBookmarks();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        BookmarkService.OnBookmarksChanged -= HandleBookmarksChanged;
+    }
+}

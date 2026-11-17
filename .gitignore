@@ -1,0 +1,15 @@
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.dotnet/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Uploads (ignore user uploaded files, keep folder)
+wwwroot/uploads/student-submissions/*
+!wwwroot/uploads/student-submissions/.gitkeep

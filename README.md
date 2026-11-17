@@ -1,5 +1,26 @@
 # ISourceKO — Academic Source Hub & Student Exchange
 
+<p align="center">
+  <a href="https://dotnet.microsoft.com/" target="_blank">
+    <img src="https://img.shields.io/badge/.NET_10-512BD4?style=flat&logo=dotnet&logoColor=white" alt=".NET 10" />
+  </a>
+  <a href="https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor" target="_blank">
+    <img src="https://img.shields.io/badge/Blazor_Web_App-512BD4?style=flat&logo=blazor&logoColor=white" alt="Blazor Web" />
+  </a>
+  <a href="https://learn.microsoft.com/dotnet/csharp/" target="_blank">
+    <img src="https://img.shields.io/badge/C%23_13-239120?style=flat&logo=c-sharp&logoColor=white" alt="C#" />
+  </a>
+  <a href="https://tailwindcss.com/" target="_blank">
+    <img src="https://img.shields.io/badge/Tailwind_CSS_v3-06B6D4?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  </a>
+  <a href="https://developer.mozilla.org/docs/Web/HTML" target="_blank">
+    <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white" alt="HTML5" />
+  </a>
+  <a href="https://nodejs.org/" target="_blank">
+    <img src="https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white" alt="Node.js" />
+  </a>
+</p>
+
 **ISourceKO** is a centralized study and research aggregator designed specifically for university and collegiate students. Instead of searching multiple tabs separately, students enter a topic once and receive consolidated, high-yield results from diverse academic and educational platforms—including **YouTube Video Lectures**, **ScienceDirect Peer-Reviewed Articles**, and **Semantic Scholar Citations**.
 
 In addition, ISourceKO features a dedicated **Peer Exchange Section** (Optional Challenge) where students can upload photos of their own handwritten notes, formula cheat sheets, diagrams, or share direct links to external study resources with real-time upvoting and community feedback.
@@ -8,16 +29,16 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
-## 🏛️ Aesthetic Direction: Modern Collegiate Archive
+## Aesthetic Direction: Modern Collegiate Archive
 
 - **Typography**: Editorial two-font pairing:
   - **Display / Headings / Citations**: `Newsreader` (Variable Optical Serif, Google Fonts)
   - **Interface / Metadata / Controls**: `Plus Jakarta Sans` (Geometric Humanist Sans, Google Fonts)
-- **Palette**: Archival Bone (`#FBFBF9`), Deep Oxford Ink (`#0C131F`), Tactile Platform Accents (YouTube Crimson `#DC2626`, ScienceDirect Ochre `#D97706`, Semantic Scholar Slate-Blue `#0284C7`, Student Evergreen `#059669`). Strict zero-purple policy.
+- **Palette**: Archival Bone (`#FBFBF9`), Deep Oxford Ink (`#0C131F`), Tactile Platform Accents (YouTube Crimson `#DC2626`, ScienceDirect Ochre `#D97706`, Semantic Scholar Slate-Blue `#0284C7`, Student Evergreen `#059669`, Electric Flame `#FF5400`). Strict zero-purple policy.
 - **Dynamic Interactions**:
-  - **Scrolling**: Sticky blur masthead with hairline border.
-  - **Hovering**: Card physical lift (`-translate-y-0.5`), image zoom (`img-zoom-frame`), underline draw.
-  - **Clicking**: Tactile button press (`active:scale-[0.97]`), live checkmark animation on citation copy, instant upvote counter feedback.
+  - **Scrolling**: Seamless floating scrollbar, dynamic top reading progress bar, and sticky blur masthead.
+  - **Hovering**: Card physical lift (`-translate-y-1`), image zoom (`img-zoom-frame`), underline draw.
+  - **Clicking**: Tactile button press (`active:scale-[0.96]`), checkmark flash on citation copy, burst animation on upvotes.
 - **Heterogeneous Content Layout**:
   - **Academic Papers**: High-density citation dossier with DOI link, publication year, and instant citation copy.
   - **Video Lectures**: 16:9 media-first preview with duration pill, educator verification, and direct watch link.
@@ -25,7 +46,7 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
-## 🛠️ Architecture & Tech Stack
+## Architecture & Tech Stack
 
 - **Framework**: **ASP.NET Core Blazor Web App** (Interactive Server mode).
   > **Note**: Uses Blazor Web (Server) as the main project instead of Blazor WebAssembly, ensuring fast initial loads, direct server-side data access, secure API key handling, and zero browser WebAssembly overhead.
@@ -35,7 +56,7 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
-## 📂 Project Directory Structure
+## Project Directory Structure
 
 ```text
 ISourceKo/
@@ -108,7 +129,7 @@ ISourceKo/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 - [.NET SDK](https://dotnet.microsoft.com/download) (Version 8.0, 9.0, or 10.0)

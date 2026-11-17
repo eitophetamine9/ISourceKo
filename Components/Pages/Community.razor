@@ -2,110 +2,129 @@
 @rendermode InteractiveServer
 @inject IStudentSubmissionService SubmissionService
 
-<PageTitle>Student Notes & Peer Sources - ISourceKO</PageTitle>
+<PageTitle>Student Notes & Source Exchange — ISourceKO</PageTitle>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
-    <!-- Header with CTA -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+    <!-- Masthead Section -->
+    <header class="flex flex-col md:flex-row md:items-baseline justify-between gap-4 pb-6 border-b border-oxford-200">
         <div>
-            <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold mb-2 border border-emerald-200/80">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                Student-Powered Community Hub
-            </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Peer-Submitted Study Sources
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-evergreen-light text-evergreen-dark border border-emerald-200 mb-2">
+                Student Exchange Archive
+            </span>
+            <h1 class="font-serif text-2xl sm:text-3xl font-bold text-oxford-950 tracking-tight">
+                Peer-Contributed Study Sources & Notes
             </h1>
-            <p class="text-sm text-slate-600 mt-1 max-w-xl">
-                Explore handwritten notes, diagrams, formula summaries, and high-yield study links uploaded directly by students.
+            <p class="text-xs sm:text-sm text-oxford-600 mt-1 max-w-xl leading-relaxed">
+                Handwritten summaries, reaction diagrams, formula sheets, and study links deposited by university students.
             </p>
         </div>
 
         <div class="flex items-center gap-3">
-            <a href="submit" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all duration-150">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <a href="submit" class="btn-press inline-flex items-center gap-2 px-4 py-2 bg-oxford-950 hover:bg-oxford-800 text-bone text-xs font-semibold rounded shadow-subtle border border-oxford-800">
+                <svg class="w-3.5 h-3.5 text-evergreen-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>Upload Note or Link</span>
+                <span>Deposit Note or Link</span>
             </a>
         </div>
-    </div>
+    </header>
 
-    <!-- Filter & Search Toolbar -->
-    <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <!-- Search Keyword -->
-        <div class="relative flex-1">
-            <input @bind="filterQuery"
-                   @bind:event="oninput"
-                   @bind:after="ApplyFilters"
-                   type="text"
-                   placeholder="Filter peer notes by keyword, tag, or student..."
-                   class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-        </div>
+    <!-- Study Hall Two-Column Asymmetric Layout -->
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <!-- Left Filter Rail -->
+        <aside class="lg:col-span-1 bg-white p-5 rounded border border-oxford-200/90 shadow-subtle space-y-6 lg:sticky lg:top-24">
+            <div>
+                <label class="block text-xs font-bold text-oxford-900 uppercase tracking-wider mb-2">
+                    Filter by Keyword
+                </label>
+                <div class="relative">
+                    <input @bind="filterQuery"
+                           @bind:event="oninput"
+                           @bind:after="ApplyFilters"
+                           type="text"
+                           placeholder="Search note tags, courses..."
+                           class="w-full pl-8 pr-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:outline-none focus:ring-1 focus:ring-oxford-900" />
+                    <svg class="w-3.5 h-3.5 text-oxford-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
 
-        <!-- Filter Controls -->
-        <div class="flex flex-wrap items-center gap-2">
-            <!-- Type Pill Buttons -->
-            <button type="button"
-                    @onclick="() => FilterByType(null)"
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors @(selectedType == null ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200")">
-                All Types
-            </button>
-            <button type="button"
-                    @onclick="() => FilterByType(SubmissionType.ImageNote)"
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors @(selectedType == SubmissionType.ImageNote ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/50")">
-                📷 Photos & Notes
-            </button>
-            <button type="button"
-                    @onclick="() => FilterByType(SubmissionType.Link)"
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors @(selectedType == SubmissionType.Link ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/50")">
-                🔗 Helpful Links
-            </button>
+            <!-- Format Filter -->
+            <div>
+                <label class="block text-xs font-bold text-oxford-900 uppercase tracking-wider mb-2">
+                    Submission Format
+                </label>
+                <div class="flex flex-col gap-1 text-xs">
+                    <button type="button"
+                            @onclick="() => FilterByType(null)"
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-medium transition-colors @(selectedType == null ? "bg-oxford-950 text-bone" : "text-oxford-700 hover:bg-oxford-100")">
+                        All Formats
+                    </button>
+                    <button type="button"
+                            @onclick="() => FilterByType(SubmissionType.ImageNote)"
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-medium transition-colors @(selectedType == SubmissionType.ImageNote ? "bg-oxford-950 text-bone" : "text-oxford-700 hover:bg-oxford-100")">
+                        📷 Photos & Handwritten
+                    </button>
+                    <button type="button"
+                            @onclick="() => FilterByType(SubmissionType.Link)"
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-medium transition-colors @(selectedType == SubmissionType.Link ? "bg-oxford-950 text-bone" : "text-oxford-700 hover:bg-oxford-100")">
+                        🔗 Web Resources & Tools
+                    </button>
+                </div>
+            </div>
 
             <!-- Discipline Filter -->
-            <select @bind="selectedField" @bind:after="ApplyFilters" class="py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="@AcademicField.General">All Disciplines</option>
-                <option value="@AcademicField.ComputerScience">Computer Science</option>
-                <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
-                <option value="@AcademicField.Mathematics">Mathematics</option>
-                <option value="@AcademicField.Engineering">Engineering</option>
-                <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
-            </select>
+            <div>
+                <label class="block text-xs font-bold text-oxford-900 uppercase tracking-wider mb-2">
+                    Discipline
+                </label>
+                <select @bind="selectedField" @bind:after="ApplyFilters" class="w-full py-2 px-2.5 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-1 focus:ring-oxford-900 cursor-pointer">
+                    <option value="@AcademicField.General">All Disciplines</option>
+                    <option value="@AcademicField.ComputerScience">Computer Science</option>
+                    <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
+                    <option value="@AcademicField.Mathematics">Mathematics</option>
+                    <option value="@AcademicField.Engineering">Engineering</option>
+                    <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
+                </select>
+            </div>
 
             <!-- Sort By -->
-            <select @bind="sortBy" @bind:after="ApplyFilters" class="py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="newest">Newest First</option>
-                <option value="top">Most Upvoted</option>
-                <option value="comments">Most Active</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Submissions Cards Grid -->
-    <div class="mt-8">
-        @if (isLoading)
-        {
-            <LoadingSkeleton Count="6" />
-        }
-        else if (submissions.Any())
-        {
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach (var submission in submissions)
-                {
-                    <StudentSourceCard Submission="submission" OnViewImage="OpenImageModal" />
-                }
+            <div>
+                <label class="block text-xs font-bold text-oxford-900 uppercase tracking-wider mb-2">
+                    Sort Order
+                </label>
+                <select @bind="sortBy" @bind:after="ApplyFilters" class="w-full py-2 px-2.5 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-1 focus:ring-oxford-900 cursor-pointer">
+                    <option value="newest">Recently Deposited</option>
+                    <option value="top">Most Upvoted by Students</option>
+                </select>
             </div>
-        }
-        else
-        {
-            <EmptyState Title="No student submissions found" Message="Be the first to upload your handwritten study notes or recommend a great academic link!" />
-        }
+        </aside>
+
+        <!-- Right Main Submissions Stream -->
+        <main class="lg:col-span-3 space-y-6">
+            @if (isLoading)
+            {
+                <LoadingSkeleton Count="4" />
+            }
+            else if (submissions.Any())
+            {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @foreach (var submission in submissions)
+                    {
+                        <StudentSourceCard Submission="submission" OnViewImage="OpenImageModal" />
+                    }
+                </div>
+            }
+            else
+            {
+                <EmptyState Title="No student submissions matched" Message="Try adjusting your discipline filter or be the first student to upload a note for this topic!" />
+            }
+        </main>
     </div>
 </div>
 
-<!-- Lightbox Modal for Student Images -->
+<!-- Darkroom Modal for Full Note Photo -->
 <ImageModal ImageUrl="@activeModalImage" OnClose="CloseImageModal" />
 
 @code {

@@ -8,6 +8,7 @@ namespace ISourceKO.Services;
 public class SourceAggregatorService : ISourceAggregatorService
 {
     private readonly IEnumerable<ISourceProvider> _providers;
+    private readonly IBookmarkService _bookmarkService;
     private readonly ILogger<SourceAggregatorService> _logger;
 
     private static readonly List<string> TrendingTopics = new()
@@ -24,9 +25,11 @@ public class SourceAggregatorService : ISourceAggregatorService
 
     public SourceAggregatorService(
         IEnumerable<ISourceProvider> providers,
+        IBookmarkService bookmarkService,
         ILogger<SourceAggregatorService> logger)
     {
         _providers = providers;
+        _bookmarkService = bookmarkService;
         _logger = logger;
     }
 
@@ -44,14 +47,12 @@ public class SourceAggregatorService : ISourceAggregatorService
             return response;
         }
 
-        // Determine providers to query based on selected platform filter
         var targetProviders = _providers.Where(p =>
             query.Platform == SourcePlatform.All || p.Platform == query.Platform
         ).ToList();
 
-        _logger.LogInformation("Querying {Count} providers for '{Query}'", targetProviders.Count, query.QueryText);
+        _logger.LogInformation("Querying {Count} providers in parallel for '{Query}'", targetProviders.Count, query.QueryText);
 
-        // Execute all providers in parallel
         var tasks = targetProviders.Select(async provider =>
         {
             try
@@ -68,19 +69,27 @@ public class SourceAggregatorService : ISourceAggregatorService
 
         var results = await Task.WhenAll(tasks);
 
-        var aggregatedItems = new List<SourceItem>();
+        var grouped = new List<List<SourceItem>>();
         foreach (var (platform, items) in results)
         {
             response.CountByPlatform[platform] = items.Count;
-            aggregatedItems.AddRange(items);
+            if (items.Count > 0)
+            {
+                foreach (var item in items)
+                {
+                    item.IsBookmarked = _bookmarkService.IsBookmarked(item.Id);
+                }
+                grouped.Add(items);
+            }
         }
 
-        // Sorting
+        var aggregatedItems = InterleaveByProvider(grouped);
+
         response.Items = query.SortBy.ToLowerInvariant() switch
         {
             "date" => aggregatedItems.OrderByDescending(x => x.PublishedDate ?? DateTime.MinValue).ToList(),
             "platform" => aggregatedItems.OrderBy(x => x.Platform).ToList(),
-            _ => aggregatedItems // Relevance order
+            _ => aggregatedItems
         };
 
         sw.Stop();
@@ -96,5 +105,24 @@ public class SourceAggregatorService : ISourceAggregatorService
     public Task<List<string>> GetTrendingTopicsAsync()
     {
         return Task.FromResult(TrendingTopics);
+    }
+
+    private static List<SourceItem> InterleaveByProvider(List<List<SourceItem>> groups)
+    {
+        var result = new List<SourceItem>();
+        if (groups.Count == 0) return result;
+
+        var maxLen = groups.Max(g => g.Count);
+        for (int i = 0; i < maxLen; i++)
+        {
+            foreach (var group in groups)
+            {
+                if (i < group.Count)
+                {
+                    result.Add(group[i]);
+                }
+            }
+        }
+        return result;
     }
 }

@@ -68,6 +68,12 @@
         </button>
 
         <button type="button"
+                @onclick="() => SelectPlatform(SourcePlatform.OpenAlex)"
+                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.OpenAlex ? "bg-openalex text-white shadow-subtle ring-2 ring-teal-300" : "bg-openalex-light text-openalex-dark hover:bg-teal-100 border border-teal-200")">
+            OpenAlex (Live)
+        </button>
+
+        <button type="button"
                 @onclick="() => SelectPlatform(SourcePlatform.ScienceDirect)"
                 class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.ScienceDirect ? "bg-sciencedirect text-white shadow-subtle ring-2 ring-amber-300" : "bg-sciencedirect-light text-sciencedirect-dark hover:bg-amber-100 border border-amber-200")">
             ScienceDirect Papers

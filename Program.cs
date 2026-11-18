@@ -11,7 +11,30 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Named HttpClients for resilient live academic & media connectors
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("OpenAlex", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(7);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.0 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("SemanticScholar", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.0 AcademicHub");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("YouTube", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36");
+});
+builder.Services.AddHttpClient("Elsevier", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
 
 // Configure SQLite Persistence via Entity Framework Core
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=isourceko.db";
@@ -23,10 +46,11 @@ builder.Services.AddSingleton<IStudentSubmissionService, StudentSubmissionServic
 builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddSingleton<IBookmarkService, BookmarkService>();
 
-// Register Multi-Platform Source Providers
+// Register Multi-Platform Source Providers (OpenAlex primary open-access + live connectors)
+builder.Services.AddTransient<ISourceProvider, OpenAlexSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, YouTubeSourceProvider>();
-builder.Services.AddTransient<ISourceProvider, ScienceDirectSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, SemanticScholarSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, ScienceDirectSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, CommunitySourceProvider>();
 
 // Register Aggregator

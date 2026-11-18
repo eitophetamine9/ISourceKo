@@ -2,6 +2,7 @@
 window.isourcekoStorage = (function () {
     const UPVOTE_KEY = 'isourceko_upvoted_ids';
     const NOTES_PREFIX = 'isourceko_video_notes_';
+    const CLIENT_ID_KEY = 'isourceko_client_id';
 
     function getUpvotedSet() {
         try {
@@ -20,6 +21,21 @@ window.isourcekoStorage = (function () {
     }
 
     return {
+        getOrCreateClientId: function () {
+            try {
+                let id = localStorage.getItem(CLIENT_ID_KEY);
+                if (!id || id.length < 8) {
+                    id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                        ? crypto.randomUUID().replace(/-/g, '')
+                        : 'stu_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+                    localStorage.setItem(CLIENT_ID_KEY, id);
+                }
+                return id;
+            } catch {
+                return 'session_' + Date.now().toString(36);
+            }
+        },
+
         hasUpvoted: function (id) {
             return getUpvotedSet().has(id);
         },

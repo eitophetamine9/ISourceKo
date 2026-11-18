@@ -1,6 +1,8 @@
 @page "/"
 @rendermode InteractiveServer
 @inject ISourceAggregatorService AggregatorService
+@inject IBookmarkService BookmarkService
+@inject IJSRuntime JS
 
 <PageTitle>ISourceKO — Academic Discovery Across Literature, Lectures & Notes</PageTitle>
 
@@ -234,6 +236,20 @@
     protected override async Task OnInitializedAsync()
     {
         trendingTopics = await AggregatorService.GetTrendingTopicsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var clientId = await JS.InvokeAsync<string>("isourcekoStorage.getOrCreateClientId");
+                await BookmarkService.InitializeClientAsync(clientId);
+                StateHasChanged();
+            }
+            catch { }
+        }
     }
 
     private async Task PerformSearch(SearchQuery query)

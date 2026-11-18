@@ -43,6 +43,8 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("Bookmarks");
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ClientId);
+            entity.HasIndex(e => new { e.ClientId, e.SourceId });
             entity.HasIndex(e => e.BookmarkedAt);
         });
     }

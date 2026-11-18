@@ -126,6 +126,21 @@
         LoadBookmarks();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var clientId = await JS.InvokeAsync<string>("isourcekoStorage.getOrCreateClientId");
+                await BookmarkService.InitializeClientAsync(clientId);
+                LoadBookmarks();
+                StateHasChanged();
+            }
+            catch { }
+        }
+    }
+
     private void LoadBookmarks()
     {
         bookmarks = BookmarkService.GetBookmarks().ToList();

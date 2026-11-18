@@ -13,6 +13,7 @@ public class BookmarkService : IBookmarkService
     private readonly ILogger<BookmarkService> _logger;
     private readonly List<SourceItem> _cache = new();
     private readonly object _lock = new();
+    private string? _clientId;
     private bool _isLoaded = false;
 
     public event Action? OnBookmarksChanged;
@@ -23,36 +24,44 @@ public class BookmarkService : IBookmarkService
         _logger = logger;
     }
 
-    private void EnsureLoaded()
+    public async Task InitializeClientAsync(string clientId)
     {
-        if (_isLoaded) return;
+        if (string.IsNullOrWhiteSpace(clientId)) return;
 
-        lock (_lock)
+        var normalized = clientId.Trim();
+        if (_isLoaded && string.Equals(_clientId, normalized, StringComparison.Ordinal))
         {
-            if (_isLoaded) return;
+            return;
+        }
 
-            try
+        _clientId = normalized;
+
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync();
+            var entities = await db.Bookmarks
+                .AsNoTracking()
+                .Where(b => b.ClientId == _clientId)
+                .OrderByDescending(b => b.BookmarkedAt)
+                .ToListAsync();
+
+            lock (_lock)
             {
-                using var db = _dbFactory.CreateDbContext();
-                var entities = db.Bookmarks
-                    .AsNoTracking()
-                    .OrderByDescending(b => b.BookmarkedAt)
-                    .ToList();
-
                 _cache.Clear();
                 _cache.AddRange(entities.Select(MapToModel));
                 _isLoaded = true;
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not load bookmarks from SQLite on initial access.");
-            }
+
+            OnBookmarksChanged?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not load bookmarks for client {ClientId} from SQLite.", _clientId);
         }
     }
 
     public IReadOnlyList<SourceItem> GetBookmarks()
     {
-        EnsureLoaded();
         lock (_lock)
         {
             return _cache.ToList().AsReadOnly();
@@ -61,7 +70,6 @@ public class BookmarkService : IBookmarkService
 
     public bool IsBookmarked(string id)
     {
-        EnsureLoaded();
         lock (_lock)
         {
             return _cache.Any(b => b.Id == id);
@@ -70,7 +78,8 @@ public class BookmarkService : IBookmarkService
 
     public void ToggleBookmark(SourceItem item)
     {
-        EnsureLoaded();
+        var activeClient = _clientId ?? "default";
+        var compositeKey = BuildKey(activeClient, item.Id);
 
         bool removed;
         lock (_lock)
@@ -95,7 +104,7 @@ public class BookmarkService : IBookmarkService
             using var db = _dbFactory.CreateDbContext();
             if (removed)
             {
-                var entity = db.Bookmarks.FirstOrDefault(b => b.Id == item.Id);
+                var entity = db.Bookmarks.FirstOrDefault(b => b.Id == compositeKey || (b.ClientId == activeClient && b.SourceId == item.Id));
                 if (entity != null)
                 {
                     db.Bookmarks.Remove(entity);
@@ -104,9 +113,9 @@ public class BookmarkService : IBookmarkService
             }
             else
             {
-                if (!db.Bookmarks.Any(b => b.Id == item.Id))
+                if (!db.Bookmarks.Any(b => b.Id == compositeKey))
                 {
-                    db.Bookmarks.Add(MapToEntity(item));
+                    db.Bookmarks.Add(MapToEntity(item, activeClient, compositeKey));
                     db.SaveChanges();
                 }
             }
@@ -121,7 +130,8 @@ public class BookmarkService : IBookmarkService
 
     public void RemoveBookmark(string id)
     {
-        EnsureLoaded();
+        var activeClient = _clientId ?? "default";
+        var compositeKey = BuildKey(activeClient, id);
 
         lock (_lock)
         {
@@ -135,7 +145,7 @@ public class BookmarkService : IBookmarkService
         try
         {
             using var db = _dbFactory.CreateDbContext();
-            var entity = db.Bookmarks.FirstOrDefault(b => b.Id == id);
+            var entity = db.Bookmarks.FirstOrDefault(b => b.Id == compositeKey || (b.ClientId == activeClient && b.SourceId == id));
             if (entity != null)
             {
                 db.Bookmarks.Remove(entity);
@@ -150,6 +160,8 @@ public class BookmarkService : IBookmarkService
         OnBookmarksChanged?.Invoke();
     }
 
+    private static string BuildKey(string clientId, string sourceId) => $"{clientId}:{sourceId}";
+
     private static SourceItem MapToModel(BookmarkEntity e)
     {
         List<string> tags;
@@ -162,7 +174,7 @@ public class BookmarkService : IBookmarkService
 
         return new SourceItem
         {
-            Id = e.Id,
+            Id = string.IsNullOrWhiteSpace(e.SourceId) ? e.Id : e.SourceId,
             Title = e.Title,
             Description = e.Description,
             Url = e.Url,
@@ -178,11 +190,13 @@ public class BookmarkService : IBookmarkService
         };
     }
 
-    private static BookmarkEntity MapToEntity(SourceItem item)
+    private static BookmarkEntity MapToEntity(SourceItem item, string clientId, string compositeKey)
     {
         return new BookmarkEntity
         {
-            Id = item.Id,
+            Id = compositeKey,
+            ClientId = clientId,
+            SourceId = item.Id,
             Title = item.Title,
             Description = item.Description,
             Url = item.Url,

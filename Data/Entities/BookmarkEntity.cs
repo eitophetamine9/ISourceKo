@@ -6,8 +6,16 @@ namespace ISourceKO.Data.Entities;
 public class BookmarkEntity
 {
     [Key]
-    [MaxLength(128)]
+    [MaxLength(200)]
     public string Id { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(64)]
+    public string ClientId { get; set; } = "default";
+
+    [Required]
+    [MaxLength(128)]
+    public string SourceId { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(500)]

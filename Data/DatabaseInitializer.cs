@@ -20,6 +20,10 @@ public static class DatabaseInitializer
         {
             logger.LogInformation("Created SQLite database schema for ISourceKO.");
         }
+        else
+        {
+            await EnsureBookmarkClientColumnsAsync(db, logger);
+        }
 
         // Seed initial high-yield student notes across subjects
         var existingIds = await db.StudentSubmissions
@@ -41,6 +45,51 @@ public static class DatabaseInitializer
                 await db.SaveChangesAsync();
                 logger.LogInformation("Seeded {Count} starter student submissions into SQLite.", starterSubmissions.Count);
             }
+        }
+    }
+
+    private static async Task EnsureBookmarkClientColumnsAsync(AppDbContext db, ILogger logger)
+    {
+        var conn = db.Database.GetDbConnection();
+        var shouldClose = conn.State != System.Data.ConnectionState.Open;
+        if (shouldClose) await conn.OpenAsync();
+
+        try
+        {
+            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA table_info(\"Bookmarks\");";
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    columns.Add(reader.GetString(1));
+                }
+            }
+
+            if (!columns.Contains("ClientId"))
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"Bookmarks\" ADD COLUMN \"ClientId\" TEXT NOT NULL DEFAULT 'default';");
+                await db.Database.ExecuteSqlRawAsync(
+                    "CREATE INDEX IF NOT EXISTS \"IX_Bookmarks_ClientId\" ON \"Bookmarks\" (\"ClientId\");");
+                logger.LogInformation("Upgraded Bookmarks table with ClientId column.");
+            }
+
+            if (!columns.Contains("SourceId"))
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"Bookmarks\" ADD COLUMN \"SourceId\" TEXT NOT NULL DEFAULT '';");
+                await db.Database.ExecuteSqlRawAsync(
+                    "UPDATE \"Bookmarks\" SET \"SourceId\" = \"Id\" WHERE \"SourceId\" = '';");
+                await db.Database.ExecuteSqlRawAsync(
+                    "CREATE INDEX IF NOT EXISTS \"IX_Bookmarks_ClientId_SourceId\" ON \"Bookmarks\" (\"ClientId\", \"SourceId\");");
+                logger.LogInformation("Upgraded Bookmarks table with SourceId column.");
+            }
+        }
+        finally
+        {
+            if (shouldClose) await conn.CloseAsync();
         }
     }
 

@@ -79,18 +79,17 @@
                 </div>
             </div>
 
-            <!-- Discipline Filter -->
+            <!-- Subject Filter -->
             <div>
                 <label class="block text-xs font-bold text-oxford-900 uppercase tracking-wider mb-2">
-                    Discipline
+                    Subject
                 </label>
                 <select @bind="selectedField" @bind:after="ApplyFilters" class="w-full py-2 px-2.5 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-1 focus:ring-oxford-900 cursor-pointer">
-                    <option value="@AcademicField.General">All Disciplines</option>
-                    <option value="@AcademicField.ComputerScience">Computer Science</option>
-                    <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
-                    <option value="@AcademicField.Mathematics">Mathematics</option>
-                    <option value="@AcademicField.Engineering">Engineering</option>
-                    <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
+                    <option value="@AcademicField.General">All Subjects</option>
+                    @foreach (var subject in AcademicFieldExtensions.AllSubjects)
+                    {
+                        <option value="@subject">@subject.GetDisplayName()</option>
+                    }
                 </select>
             </div>
 
@@ -101,7 +100,8 @@
                 </label>
                 <select @bind="sortBy" @bind:after="ApplyFilters" class="w-full py-2 px-2.5 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-1 focus:ring-oxford-900 cursor-pointer">
                     <option value="newest">Recently Deposited</option>
-                    <option value="top">🔥 Most Upvoted by Students</option>
+                    <option value="top">Most Upvoted by Students</option>
+                    <option value="comments">Most Discussed</option>
                 </select>
             </div>
         </aside>
@@ -123,7 +123,7 @@
             }
             else
             {
-                <EmptyState Title="No student submissions matched" Message="Try adjusting your discipline filter or be the first student to upload a note for this topic!" />
+                <EmptyState Title="No student submissions matched" Message="Try adjusting your subject filter or be the first student to upload a note for this topic!" />
             }
         </main>
     </div>

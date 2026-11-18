@@ -1,5 +1,6 @@
 @using ISourceKO.Models
 @using ISourceKO.Models.Enums
+@using ISourceKO.Services
 @inject IBookmarkService BookmarkService
 @inject IJSRuntime JS
 
@@ -8,14 +9,24 @@
     <!-- VIDEO LECTURE DOSSIER -->
     <article class="card-lift bg-white rounded-lg border border-oxford-200/90 shadow-subtle p-4 flex flex-col justify-between group relative overflow-hidden">
         <div>
-            <!-- Video Thumbnail Frame with Hover Zoom & Duration Pill -->
+            <!-- Video Thumbnail Frame with Hover Zoom, Play Trigger & Duration Pill -->
             @if (!string.IsNullOrEmpty(Item.ThumbnailUrl))
             {
-                <div class="relative w-full aspect-video rounded overflow-hidden mb-3 bg-oxford-100 img-zoom-frame border border-oxford-200/60 shadow-inner">
+                <div class="relative w-full aspect-video rounded overflow-hidden mb-3 bg-oxford-100 img-zoom-frame border border-oxford-200/60 shadow-inner @(HasVideoId && OnWatchVideo.HasDelegate ? "cursor-pointer" : "")"
+                     @onclick="HandleThumbnailClick">
                     <img src="@Item.ThumbnailUrl" alt="@Item.Title" class="w-full h-full object-cover" loading="lazy" />
-                    <div class="absolute inset-0 bg-oxford-950/20 group-hover:bg-transparent transition-colors"></div>
-                    
-                    @if (Item.Metadata.TryGetValue("Duration", out var duration))
+                    <div class="absolute inset-0 bg-oxford-950/25 group-hover:bg-oxford-950/15 transition-colors flex items-center justify-center">
+                        @if (HasVideoId && OnWatchVideo.HasDelegate)
+                        {
+                            <span class="w-11 h-11 rounded-full bg-oxford-950/85 group-hover:bg-flame text-white flex items-center justify-center shadow-lift transition-all duration-200 group-hover:scale-110">
+                                <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            </span>
+                        }
+                    </div>
+
+                    @if (Item.Metadata.TryGetValue("Duration", out var duration) && !string.IsNullOrWhiteSpace(duration))
                     {
                         <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-oxford-950/85 backdrop-blur-sm text-bone text-[11px] font-mono font-semibold tracking-tight shadow-subtle">
                             @duration
@@ -35,9 +46,18 @@
 
             <!-- Video Title in Editorial Serif -->
             <h3 class="font-serif text-base font-bold text-oxford-950 leading-snug group-hover:text-flame transition-colors">
-                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-flame underline-offset-2 flex items-start gap-1">
-                    <span>@Item.Title</span>
-                </a>
+                @if (HasVideoId && OnWatchVideo.HasDelegate)
+                {
+                    <button type="button" @onclick="WatchInTheater" class="text-left hover:underline decoration-flame underline-offset-2">
+                        @Item.Title
+                    </button>
+                }
+                else
+                {
+                    <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="hover:underline decoration-flame underline-offset-2 flex items-start gap-1">
+                        <span>@Item.Title</span>
+                    </a>
+                }
             </h3>
 
             <!-- Description -->
@@ -47,13 +67,13 @@
         </div>
 
         <!-- Video Footer with Channel, Metrics & Actions -->
-        <div class="mt-4 pt-3 border-t border-oxford-100 flex items-center justify-between text-xs text-oxford-500">
-            <div class="flex items-center gap-1.5 truncate">
+        <div class="mt-4 pt-3 border-t border-oxford-100 flex items-center justify-between gap-2 text-xs text-oxford-500">
+            <div class="flex items-center gap-1.5 min-w-0 truncate">
                 <span class="font-semibold text-oxford-800 truncate">@Item.AuthorOrPublisher</span>
                 @if (!string.IsNullOrEmpty(Item.MetricsInfo))
                 {
                     <span class="text-oxford-300">•</span>
-                    <span class="text-oxford-500 text-[11px] shrink-0 font-medium">@Item.MetricsInfo</span>
+                    <span class="text-oxford-500 text-[11px] shrink-0 font-medium truncate">@Item.MetricsInfo</span>
                 }
             </div>
 
@@ -66,22 +86,53 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
                 </button>
-                <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="btn-press px-3 py-1 bg-oxford-900 hover:bg-oxford-800 text-white font-medium text-xs rounded border border-oxford-800 shadow-subtle flex items-center gap-1">
-                    <span>Watch</span>
-                    <svg class="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                </a>
+
+                <button type="button"
+                        @onclick="TriggerCitation"
+                        title="Cite this lecture"
+                        class="btn-press px-2 py-1 bg-oxford-50 hover:bg-oxford-100 text-oxford-700 rounded border border-oxford-200 text-[11px] font-semibold transition-colors">
+                    Cite
+                </button>
+
+                @if (HasVideoId && OnWatchVideo.HasDelegate)
+                {
+                    <button type="button"
+                            @onclick="WatchInTheater"
+                            class="btn-press px-3 py-1 bg-oxford-900 hover:bg-oxford-800 text-white font-medium text-xs rounded border border-oxford-800 shadow-subtle flex items-center gap-1">
+                        <span>Watch</span>
+                        <svg class="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    </button>
+                }
+                else
+                {
+                    <a href="@Item.Url" target="_blank" rel="noopener noreferrer" class="btn-press px-3 py-1 bg-oxford-900 hover:bg-oxford-800 text-white font-medium text-xs rounded border border-oxford-800 shadow-subtle flex items-center gap-1">
+                        <span>Watch</span>
+                        <svg class="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    </a>
+                }
             </div>
         </div>
     </article>
 }
 else
 {
-    <!-- ACADEMIC RESEARCH DOSSIER (ScienceDirect, Semantic Scholar, etc.) -->
+    <!-- ACADEMIC RESEARCH DOSSIER (OpenAlex, ScienceDirect, Semantic Scholar, etc.) -->
     <article class="card-lift bg-white rounded-lg border border-oxford-200/90 shadow-subtle p-5 flex flex-col justify-between group relative overflow-hidden">
-        <!-- High-Citation Visual Pop Indicator -->
-        @if (Item.MetricsInfo != null && (Item.MetricsInfo.Contains("citations") || Item.MetricsInfo.Contains("Patents")))
+        <!-- Live API / High-Citation Indicator -->
+        @if (IsLiveSource)
+        {
+            <div class="absolute top-0 right-0">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-bl bg-openalex-light border-l border-b border-teal-200 text-openalex-dark text-[10px] font-bold tracking-tight">
+                    <span class="w-1.5 h-1.5 rounded-full bg-openalex"></span>
+                    Live Index
+                </span>
+            </div>
+        }
+        else if (Item.MetricsInfo != null && (Item.MetricsInfo.Contains("citations") || Item.MetricsInfo.Contains("Patents")))
         {
             <div class="absolute top-0 right-0">
                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-bl bg-amber-500/10 border-l border-b border-amber-300 text-amber-900 text-[10px] font-bold tracking-tight">
@@ -91,24 +142,24 @@ else
         }
 
         <div>
-            <!-- Header: Platform Badge, Field, & Bookmark Button -->
-            <div class="flex items-center justify-between gap-3 mb-2.5">
-                <div class="flex items-center gap-2">
+            <!-- Header: Platform Badge, DOI, & Bookmark Button -->
+            <div class="flex items-center justify-between gap-3 mb-2.5 pt-1">
+                <div class="flex items-center gap-2 min-w-0">
                     <PlatformBadge Platform="Item.Platform" />
-                    @if (Item.Metadata.TryGetValue("DOI", out var doi))
+                    @if (Item.Metadata.TryGetValue("DOI", out var doi) && !string.IsNullOrWhiteSpace(doi))
                     {
-                        <span class="text-[11px] font-mono text-oxford-400 truncate max-w-[140px]">DOI:@doi</span>
+                        <span class="text-[11px] font-mono text-oxford-400 truncate max-w-[140px]" title="@doi">DOI:@doi</span>
                     }
                 </div>
 
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 shrink-0">
                     @if (Item.Field != AcademicField.General)
                     {
                         <span class="text-[11px] px-2 py-0.5 bg-oxford-50 text-oxford-600 rounded border border-oxford-200 font-medium">
-                            @Item.Field.ToString()
+                            @Item.Field.GetDisplayName()
                         </span>
                     }
-                    
+
                     <button type="button"
                             @onclick="ToggleBookmark"
                             title="@(isBookmarked ? "Remove Bookmark" : "Save Bookmark")"
@@ -156,16 +207,27 @@ else
         </div>
 
         <!-- Academic Actions Footer -->
-        <div class="mt-5 pt-3.5 border-t border-oxford-100 flex items-center justify-between text-xs">
+        <div class="mt-5 pt-3.5 border-t border-oxford-100 flex flex-wrap items-center justify-between gap-2 text-xs">
             <span class="text-oxford-500 text-[11px] font-semibold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-sciencedirect"></span>
+                <span class="w-1.5 h-1.5 rounded-full @(Item.Platform == SourcePlatform.OpenAlex ? "bg-openalex" : "bg-sciencedirect")"></span>
                 @(Item.MetricsInfo ?? "Scholarly Record")
             </span>
 
-            <div class="flex items-center gap-2">
-                <!-- Copy Citation Button with Animated Checkmark Pop -->
+            <div class="flex items-center gap-1.5">
+                @if (Item.Metadata.TryGetValue("PdfUrl", out var pdfUrl) && !string.IsNullOrWhiteSpace(pdfUrl))
+                {
+                    <a href="@pdfUrl"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       title="Open Access PDF"
+                       class="btn-press inline-flex items-center gap-1 px-2.5 py-1 bg-evergreen-light hover:bg-emerald-100 text-evergreen-dark rounded border border-emerald-200 text-xs font-bold transition-colors">
+                        <span>PDF</span>
+                    </a>
+                }
+
+                <!-- Citation Suite Trigger -->
                 <button type="button"
-                        @onclick="CopyCitation"
+                        @onclick="TriggerCitation"
                         class="btn-press inline-flex items-center gap-1.5 px-2.5 py-1 bg-oxford-50 hover:bg-oxford-100 text-oxford-800 rounded border border-oxford-200 text-xs font-semibold transition-all">
                     @if (isCopied)
                     {
@@ -199,23 +261,52 @@ else
 
 @code {
     [Parameter, EditorRequired] public SourceItem Item { get; set; } = default!;
+    [Parameter] public EventCallback<SourceItem> OnWatchVideo { get; set; }
+    [Parameter] public EventCallback<SourceItem> OnOpenCitation { get; set; }
 
     private bool isBookmarked => BookmarkService.IsBookmarked(Item.Id);
     private bool isCopied = false;
+
+    private bool HasVideoId =>
+        Item.Metadata.TryGetValue("VideoId", out var vid) && !string.IsNullOrWhiteSpace(vid);
+
+    private bool IsLiveSource =>
+        Item.Metadata.TryGetValue("SourceMode", out var mode) &&
+        mode.StartsWith("Live", StringComparison.OrdinalIgnoreCase);
 
     private void ToggleBookmark()
     {
         BookmarkService.ToggleBookmark(Item);
     }
 
-    private async Task CopyCitation()
+    private async Task HandleThumbnailClick()
     {
-        var year = Item.PublishedDate?.Year.ToString() ?? "n.d.";
-        var citation = $"{Item.AuthorOrPublisher} ({year}). {Item.Title}. Retrieved from {Item.Url}";
+        if (HasVideoId && OnWatchVideo.HasDelegate)
+        {
+            await WatchInTheater();
+        }
+    }
 
+    private async Task WatchInTheater()
+    {
+        if (OnWatchVideo.HasDelegate)
+        {
+            await OnWatchVideo.InvokeAsync(Item);
+        }
+    }
+
+    private async Task TriggerCitation()
+    {
+        if (OnOpenCitation.HasDelegate)
+        {
+            await OnOpenCitation.InvokeAsync(Item);
+            return;
+        }
+
+        var citation = CitationFormatter.Format(Item, CitationStyle.Apa7);
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", citation);
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", citation);
             isCopied = true;
             StateHasChanged();
             await Task.Delay(2000);

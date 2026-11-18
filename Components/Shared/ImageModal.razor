@@ -1,33 +1,96 @@
 @if (!string.IsNullOrEmpty(ImageUrl))
 {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-oxford-950/80 backdrop-blur-sm animate-fade-in"
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-oxford-950/85 backdrop-blur-md animate-fade-in"
          @onclick="Close">
-        <div class="relative max-w-4xl max-h-[90vh] bg-white rounded overflow-hidden shadow-lift border border-oxford-700 flex flex-col animate-scale-in"
+        <div class="relative w-full max-w-5xl max-h-[92vh] bg-white rounded-xl overflow-hidden shadow-pop border border-oxford-700 flex flex-col animate-scale-in"
              @onclick:stopPropagation="true">
-            <!-- Modal Header -->
-            <div class="px-5 py-3 bg-oxford-950 text-bone flex items-center justify-between border-b border-oxford-800">
-                <span class="text-xs font-medium flex items-center gap-2">
-                    <svg class="w-4 h-4 text-evergreen-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            <!-- Modal Header with Zoom & Rotation Controls -->
+            <div class="px-4 sm:px-5 py-3 bg-oxford-950 text-bone flex flex-wrap items-center justify-between gap-3 border-b border-oxford-800">
+                <span class="text-xs font-semibold flex items-center gap-2">
+                    <svg class="w-4 h-4 text-evergreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Student Note Archive Preview
+                    <span>Note &amp; Diagram Inspector</span>
                 </span>
-                <button type="button" @onclick="Close" class="btn-press text-oxford-400 hover:text-bone transition-colors p-1" aria-label="Close modal">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+
+                <!-- Darkroom Zoom Toolbar -->
+                <div class="flex items-center gap-1.5 text-xs">
+                    <button type="button"
+                            @onclick="ZoomOut"
+                            disabled="@(zoomLevel <= 0.5)"
+                            title="Zoom out"
+                            class="btn-press px-2 py-1 rounded bg-oxford-900 hover:bg-oxford-800 disabled:opacity-40 border border-oxford-700 text-bone font-mono font-bold">
+                        −
+                    </button>
+                    <span class="px-2 py-1 font-mono text-[11px] text-oxford-200 min-w-[48px] text-center">
+                        @(Math.Round(zoomLevel * 100))%
+                    </span>
+                    <button type="button"
+                            @onclick="ZoomIn"
+                            disabled="@(zoomLevel >= 3.0)"
+                            title="Zoom in"
+                            class="btn-press px-2 py-1 rounded bg-oxford-900 hover:bg-oxford-800 disabled:opacity-40 border border-oxford-700 text-bone font-mono font-bold">
+                        +
+                    </button>
+                    <button type="button"
+                            @onclick="Rotate"
+                            title="Rotate 90 degrees"
+                            class="btn-press px-2 py-1 rounded bg-oxford-900 hover:bg-oxford-800 border border-oxford-700 text-bone text-[11px] font-medium ml-1">
+                        Rotate
+                    </button>
+                    <button type="button"
+                            @onclick="ResetView"
+                            title="Reset view"
+                            class="btn-press px-2 py-1 rounded bg-oxford-900 hover:bg-oxford-800 border border-oxford-700 text-oxford-300 hover:text-bone text-[11px] font-medium">
+                        Reset
+                    </button>
+
+                    <button type="button"
+                            @onclick="Close"
+                            aria-label="Close modal"
+                            class="btn-press ml-2 text-oxford-400 hover:text-bone hover:bg-oxford-800 transition-colors p-1.5 rounded">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-            <!-- Image Viewport -->
-            <div class="p-2 bg-oxford-950/90 flex items-center justify-center overflow-auto max-h-[75vh]">
-                <img src="@ImageUrl" alt="Note preview" class="max-w-full max-h-full object-contain rounded shadow" />
+            <!-- Interactive Pan & Zoom Image Viewport -->
+            <div class="relative bg-oxford-950/95 flex items-center justify-center overflow-hidden h-[68vh] select-none @(zoomLevel > 1.0 ? (isPanning ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in")"
+                 @onmousedown="StartPan"
+                 @onmousemove="OnPan"
+                 @onmouseup="EndPan"
+                 @onmouseleave="EndPan"
+                 @ondblclick="ToggleQuickZoom">
+                <img src="@ImageUrl"
+                     alt="Note preview"
+                     draggable="false"
+                     class="max-w-full max-h-full object-contain rounded shadow transition-transform duration-150 ease-out will-change-transform"
+                     style="@ImageTransformStyle" />
+
+                @if (zoomLevel > 1.0)
+                {
+                    <div class="absolute bottom-3 left-3 px-2.5 py-1 rounded bg-oxford-950/80 border border-oxford-700 text-[11px] font-mono text-oxford-300 pointer-events-none">
+                        Drag to pan • Double-click to reset
+                    </div>
+                }
+                else
+                {
+                    <div class="absolute bottom-3 left-3 px-2.5 py-1 rounded bg-oxford-950/80 border border-oxford-700 text-[11px] font-mono text-oxford-300 pointer-events-none">
+                        Double-click or use + / − to inspect handwriting
+                    </div>
+                }
             </div>
 
             <!-- Modal Footer -->
             <div class="px-5 py-3 bg-white border-t border-oxford-200 flex items-center justify-between text-xs text-oxford-600">
-                <span>Archived student study document</span>
-                <a href="@ImageUrl" target="_blank" download class="btn-press inline-flex items-center gap-1.5 text-oxford-900 font-semibold hover:underline">
+                <span>Archived student study document • High-resolution inspector</span>
+                <a href="@ImageUrl"
+                   target="_blank"
+                   download
+                   class="btn-press inline-flex items-center gap-1.5 text-oxford-900 font-semibold hover:text-flame transition-colors">
                     <span>Download Original</span>
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -42,8 +105,93 @@
     [Parameter] public string? ImageUrl { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
+    private double zoomLevel = 1.0;
+    private int rotationDeg = 0;
+    private double panX = 0;
+    private double panY = 0;
+    private bool isPanning = false;
+    private double lastMouseX = 0;
+    private double lastMouseY = 0;
+    private string? previousUrl;
+
+    private string ImageTransformStyle =>
+        FormattableString.Invariant($"transform: translate3d({panX}px, {panY}px, 0) scale({zoomLevel}) rotate({rotationDeg}deg);");
+
+    protected override void OnParametersSet()
+    {
+        if (ImageUrl != previousUrl)
+        {
+            previousUrl = ImageUrl;
+            ResetView();
+        }
+    }
+
+    private void ZoomIn()
+    {
+        zoomLevel = Math.Min(3.0, Math.Round(zoomLevel + 0.25, 2));
+    }
+
+    private void ZoomOut()
+    {
+        zoomLevel = Math.Max(0.5, Math.Round(zoomLevel - 0.25, 2));
+        if (zoomLevel <= 1.0)
+        {
+            panX = 0;
+            panY = 0;
+        }
+    }
+
+    private void Rotate()
+    {
+        rotationDeg = (rotationDeg + 90) % 360;
+    }
+
+    private void ResetView()
+    {
+        zoomLevel = 1.0;
+        rotationDeg = 0;
+        panX = 0;
+        panY = 0;
+        isPanning = false;
+    }
+
+    private void ToggleQuickZoom()
+    {
+        if (zoomLevel > 1.0)
+        {
+            ResetView();
+        }
+        else
+        {
+            zoomLevel = 2.0;
+        }
+    }
+
+    private void StartPan(MouseEventArgs e)
+    {
+        if (zoomLevel <= 1.0) return;
+        isPanning = true;
+        lastMouseX = e.ClientX;
+        lastMouseY = e.ClientY;
+    }
+
+    private void OnPan(MouseEventArgs e)
+    {
+        if (!isPanning) return;
+        panX += e.ClientX - lastMouseX;
+        panY += e.ClientY - lastMouseY;
+        lastMouseX = e.ClientX;
+        lastMouseY = e.ClientY;
+    }
+
+    private void EndPan()
+    {
+        isPanning = false;
+    }
+
     private async Task Close()
     {
+        ResetView();
         await OnClose.InvokeAsync();
     }
 }

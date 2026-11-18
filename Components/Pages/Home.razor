@@ -1,6 +1,8 @@
 @page "/"
 @rendermode InteractiveServer
 @inject ISourceAggregatorService AggregatorService
+@inject IBookmarkService BookmarkService
+@inject IJSRuntime JS
 
 <PageTitle>ISourceKO — Academic Discovery Across Literature, Lectures & Notes</PageTitle>
 
@@ -14,25 +16,25 @@
                 Unified Collegiate Research Engine
             </span>
         </div>
-        
+
         <!-- Masked Reveal Line 2: Headline Part 1 -->
         <div class="overflow-hidden">
             <h1 class="masked-line-inner font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-oxford-950 tracking-tight leading-[1.12] will-change-transform">
                 One Search Across Scholarly Papers,
             </h1>
         </div>
-        
+
         <!-- Masked Reveal Line 3: Headline Part 2 -->
         <div class="overflow-hidden">
             <h1 class="masked-line-inner font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-oxford-950 tracking-tight leading-[1.12] text-oxford-800 will-change-transform">
                 Lecture Videos, and Student Notes
             </h1>
         </div>
-        
+
         <!-- Masked Reveal Line 4: Body Description -->
         <div class="overflow-hidden mt-3">
             <p class="masked-line-inner text-xs sm:text-sm text-oxford-600 max-w-2xl mx-auto leading-relaxed will-change-transform">
-                Consolidate your course research. Query ScienceDirect peer-reviewed articles, YouTube academic lectures, Semantic Scholar citations, and student handwritten guides in a single pass.
+                Consolidate your course research. Query live OpenAlex open-access papers, Semantic Scholar citations, ScienceDirect journals, in-app YouTube lectures, and SQLite-persisted student guides in a single pass.
             </p>
         </div>
     </header>
@@ -45,8 +47,8 @@
     <!-- Kinetic Marquee: Reacts to User's Scroll Velocity & Direction -->
     <section class="w-full overflow-hidden py-3 border-y border-oxford-200/70 bg-white/70 backdrop-blur-sm my-8 select-none" aria-hidden="true">
         <div class="kinetic-marquee-track flex whitespace-nowrap will-change-transform text-[11px] font-mono font-bold tracking-widest text-oxford-600 uppercase">
-            <span>YOUTUBE OPENCOURSEWARE + LECTURES &nbsp;•&nbsp; SCIENCEDIRECT PEER-REVIEWED JOURNAL ARTICLES &nbsp;•&nbsp; SEMANTIC SCHOLAR CITATION GRAPH &nbsp;•&nbsp; STUDENT HANDWRITTEN EXAM NOTES &nbsp;•&nbsp; DOI CITATION EXPORTS &nbsp;•&nbsp; OPEN ACCESS REPOSITORIES &nbsp;•&nbsp; </span>
-            <span>YOUTUBE OPENCOURSEWARE + LECTURES &nbsp;•&nbsp; SCIENCEDIRECT PEER-REVIEWED JOURNAL ARTICLES &nbsp;•&nbsp; SEMANTIC SCHOLAR CITATION GRAPH &nbsp;•&nbsp; STUDENT HANDWRITTEN EXAM NOTES &nbsp;•&nbsp; DOI CITATION EXPORTS &nbsp;•&nbsp; OPEN ACCESS REPOSITORIES &nbsp;•&nbsp; </span>
+            <span>OPENALEX 250M+ LIVE PAPERS &nbsp;•&nbsp; IN-APP YOUTUBE LECTURE THEATER &nbsp;•&nbsp; SEMANTIC SCHOLAR CITATION GRAPH &nbsp;•&nbsp; SCIENCEDIRECT PEER-REVIEWED JOURNALS &nbsp;•&nbsp; APA / MLA / CHICAGO / BIBTEX EXPORTS &nbsp;•&nbsp; SQLITE STUDENT ARCHIVE &nbsp;•&nbsp; </span>
+            <span>OPENALEX 250M+ LIVE PAPERS &nbsp;•&nbsp; IN-APP YOUTUBE LECTURE THEATER &nbsp;•&nbsp; SEMANTIC SCHOLAR CITATION GRAPH &nbsp;•&nbsp; SCIENCEDIRECT PEER-REVIEWED JOURNALS &nbsp;•&nbsp; APA / MLA / CHICAGO / BIBTEX EXPORTS &nbsp;•&nbsp; SQLITE STUDENT ARCHIVE &nbsp;•&nbsp; </span>
         </div>
     </section>
 
@@ -58,7 +60,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <span class="inline-flex items-center gap-2 text-xs text-oxford-600 font-mono font-medium">
                         <span class="w-2 h-2 rounded-full bg-flame animate-ping"></span>
-                        Executing parallel queries across registered academic corpora...
+                        Executing parallel live queries across OpenAlex, Semantic Scholar, YouTube, and Student Archive...
                     </span>
                 </div>
                 <LoadingSkeleton Count="6" />
@@ -94,7 +96,9 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
                     @foreach (var item in response.Items)
                     {
-                        <SourceCard Item="item" />
+                        <SourceCard Item="item"
+                                    OnWatchVideo="OpenVideoModal"
+                                    OnOpenCitation="OpenCitationModal" />
                     }
                 </div>
             }
@@ -113,7 +117,7 @@
                     </span>
                     <h2 class="font-serif text-2xl sm:text-3xl font-bold text-oxford-950">How ISourceKO Indexes Knowledge</h2>
                     <p class="text-xs sm:text-sm text-oxford-600 mt-1 max-w-lg mx-auto">
-                        Scroll through the knowledge pipeline below to see how external APIs and student contributions synchronize in real-time.
+                        Scroll through the knowledge pipeline below to see how live academic APIs, distraction-free media, and SQLite peer archives synchronize in real-time.
                     </p>
                 </div>
 
@@ -134,41 +138,41 @@
                         <!-- Panel 1: Video Stream State -->
                         <div class="split-visual-panel transition-all">
                             <div class="p-4 rounded-xl bg-oxford-900 border border-oxford-800 space-y-2">
-                                <span class="text-xs font-mono font-bold text-red-400">[01] YouTube Lecture Aggregation</span>
+                                <span class="text-xs font-mono font-bold text-red-400">[01] In-App YouTube Lecture Theater</span>
                                 <p class="text-xs text-oxford-300 leading-relaxed">
-                                    Filters educational channels (3Blue1Brown, MIT OCW, Stanford). Extracts video transcripts and high-yield chapters.
+                                    Watch lectures in a distraction-free embedded player with a local study scratchpad, citation export, and one-click syllabus bookmarking.
                                 </p>
                                 <div class="pt-2 flex items-center justify-between font-mono text-[11px] text-oxford-400">
-                                    <span>Latency: &lt;120ms</span>
+                                    <span>Embed: No-Cookie HD</span>
                                     <span class="text-emerald-400">STATUS: 200 OK</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Panel 2: Peer-Reviewed Elsevier/ScienceDirect State -->
+                        <!-- Panel 2: OpenAlex & Peer-Reviewed State -->
                         <div class="split-visual-panel transition-all">
                             <div class="p-4 rounded-xl bg-oxford-900 border border-oxford-800 space-y-2">
-                                <span class="text-xs font-mono font-bold text-amber-400">[02] Elsevier / ScienceDirect DOI Graph</span>
+                                <span class="text-xs font-mono font-bold text-teal-400">[02] OpenAlex &amp; Semantic Scholar Live APIs</span>
                                 <p class="text-xs text-oxford-300 leading-relaxed">
-                                    Queries research abstracts, peer review badges, journal volumes, and formats auto-generated APA and BibTeX citations.
+                                    Queries 250M+ open-access scholarly works with DOI links, direct PDFs, citation counts, and instant APA, MLA, Chicago, and BibTeX exports.
                                 </p>
                                 <div class="pt-2 flex items-center justify-between font-mono text-[11px] text-oxford-400">
-                                    <span>Citations Index: 4.8M+</span>
+                                    <span>Works Index: 250M+</span>
                                     <span class="text-emerald-400">STATUS: VERIFIED</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Panel 3: Student Exchange State -->
+                        <!-- Panel 3: Student Exchange SQLite State -->
                         <div class="split-visual-panel transition-all">
                             <div class="p-4 rounded-xl bg-oxford-900 border border-oxford-800 space-y-2">
-                                <span class="text-xs font-mono font-bold text-emerald-400">[03] Student Handwritten Note Archive</span>
+                                <span class="text-xs font-mono font-bold text-emerald-400">[03] SQLite Student Note Archive</span>
                                 <p class="text-xs text-oxford-300 leading-relaxed">
-                                    Stores high-resolution handwritten notes, diagrams, and formula cheat sheets with community upvoting.
+                                    Persists handwritten notes, zoomable diagrams, peer discussions, and de-duplicated upvotes locally via Entity Framework Core.
                                 </p>
                                 <div class="pt-2 flex items-center justify-between font-mono text-[11px] text-oxford-400">
-                                    <span>Community Votes: Real-Time</span>
-                                    <span class="text-emerald-400">STATUS: DEPOSITED</span>
+                                    <span>Engine: EF Core + SQLite</span>
+                                    <span class="text-emerald-400">STATUS: PERSISTED</span>
                                 </div>
                             </div>
                         </div>
@@ -179,30 +183,30 @@
                         <div class="split-story-card card-lift bg-white p-6 rounded-xl border border-oxford-200/90 shadow-subtle space-y-3">
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-0.5 rounded text-xs font-bold bg-youtube-light text-youtube border border-red-200">Stage 01</span>
-                                <h3 class="font-serif text-lg font-bold text-oxford-950">Visual Concept Mastery</h3>
+                                <h3 class="font-serif text-lg font-bold text-oxford-950">Distraction-Free Visual Mastery</h3>
                             </div>
                             <p class="text-xs sm:text-sm text-oxford-700 leading-relaxed">
-                                Before tackling dense formulas, students often need intuitive geometry and animations. ISourceKO queries verified educational creators to bring the top explanation straight into your search feed.
+                                Before tackling dense formulas, students often need intuitive geometry and animations. Launch lectures directly inside ISourceKO's Theater Modal with a side-by-side scratchpad—without getting pulled into algorithmic rabbit holes.
                             </p>
                         </div>
 
                         <div class="split-story-card card-lift bg-white p-6 rounded-xl border border-oxford-200/90 shadow-subtle space-y-3">
                             <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-sciencedirect-light text-sciencedirect-dark border border-amber-200">Stage 02</span>
-                                <h3 class="font-serif text-lg font-bold text-oxford-950">Academic Rigor & Journal Evidence</h3>
+                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-openalex-light text-openalex-dark border border-teal-200">Stage 02</span>
+                                <h3 class="font-serif text-lg font-bold text-oxford-950">Live Open-Access Literature &amp; Citation Suite</h3>
                             </div>
                             <p class="text-xs sm:text-sm text-oxford-700 leading-relaxed">
-                                Back your term papers and lab reports with empirical citations. Directly access ScienceDirect and Semantic Scholar papers, complete with DOI links and one-click citation copying.
+                                Back your term papers and lab reports with real peer-reviewed literature from OpenAlex, Semantic Scholar, and ScienceDirect—complete with open-access PDF links and instant APA 7th, MLA 9th, Chicago, and BibTeX exports.
                             </p>
                         </div>
 
                         <div class="split-story-card card-lift bg-white p-6 rounded-xl border border-oxford-200/90 shadow-subtle space-y-3">
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-0.5 rounded text-xs font-bold bg-evergreen-light text-evergreen-dark border border-emerald-200">Stage 03</span>
-                                <h3 class="font-serif text-lg font-bold text-oxford-950">Peer Insights & Exam Cheat Sheets</h3>
+                                <h3 class="font-serif text-lg font-bold text-oxford-950">Persistent Peer Notes &amp; Study Discussions</h3>
                             </div>
                             <p class="text-xs sm:text-sm text-oxford-700 leading-relaxed">
-                                Textbooks don't always explain the midterm trick. The Student Exchange section lets peers upload their own handwritten study notes, mindmaps, and solved edge-case examples.
+                                Textbooks don't always explain the midterm trick. Deposit handwritten study notes, inspect diagrams with pan-and-zoom controls, discuss edge cases with classmates, and save your reading list permanently in SQLite.
                             </p>
                         </div>
                     </div>
@@ -212,15 +216,40 @@
     </section>
 </div>
 
+<!-- In-App Lecture Theater Modal -->
+<VideoPlayerModal Item="@activeVideoItem"
+                  OnClose="CloseVideoModal"
+                  OnOpenCitation="OpenCitationModal" />
+
+<!-- Multi-Style Academic Citation Modal -->
+<CitationModal Item="@activeCitationItem"
+               OnClose="CloseCitationModal" />
+
 @code {
     private SearchQuery searchQuery = new();
     private SearchResponse? response;
     private List<string> trendingTopics = new();
     private bool isLoading = false;
+    private SourceItem? activeVideoItem;
+    private SourceItem? activeCitationItem;
 
     protected override async Task OnInitializedAsync()
     {
         trendingTopics = await AggregatorService.GetTrendingTopicsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var clientId = await JS.InvokeAsync<string>("isourcekoStorage.getOrCreateClientId");
+                await BookmarkService.InitializeClientAsync(clientId);
+                StateHasChanged();
+            }
+            catch { }
+        }
     }
 
     private async Task PerformSearch(SearchQuery query)
@@ -242,5 +271,25 @@
         {
             isLoading = false;
         }
+    }
+
+    private void OpenVideoModal(SourceItem item)
+    {
+        activeVideoItem = item;
+    }
+
+    private void CloseVideoModal()
+    {
+        activeVideoItem = null;
+    }
+
+    private void OpenCitationModal(SourceItem item)
+    {
+        activeCitationItem = item;
+    }
+
+    private void CloseCitationModal()
+    {
+        activeCitationItem = null;
     }
 }

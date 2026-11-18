@@ -10,6 +10,11 @@ obj/
 node_modules/
 npm-debug.log
 
+# Database
+*.db
+*.db-shm
+*.db-wal
+
 # Uploads (ignore user uploaded files, keep folder)
 wwwroot/uploads/student-submissions/*
 !wwwroot/uploads/student-submissions/.gitkeep

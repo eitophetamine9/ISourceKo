@@ -1,0 +1,241 @@
+@using ISourceKO.Models
+@inject IBookmarkService BookmarkService
+@inject IJSRuntime JS
+
+@if (Item != null && !string.IsNullOrEmpty(VideoId))
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-oxford-950/85 backdrop-blur-md animate-fade-in"
+         @onclick="Close">
+        <div class="relative w-full max-w-6xl max-h-[92vh] bg-oxford-950 text-bone rounded-xl overflow-hidden shadow-pop border border-oxford-800 flex flex-col animate-scale-in"
+             @onclick:stopPropagation="true">
+
+            <!-- Theater Header Bar -->
+            <div class="px-5 py-3.5 bg-oxford-950 border-b border-oxford-800 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold bg-youtube text-white shrink-0">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                        Lecture Theater
+                    </span>
+                    <h3 class="font-serif text-sm sm:text-base font-bold text-bone truncate" title="@Item.Title">
+                        @Item.Title
+                    </h3>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button"
+                            @onclick="ToggleNotes"
+                            class="btn-press hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold border transition-colors @(showNotes ? "bg-flame text-white border-flame" : "bg-oxford-900 text-oxford-200 border-oxford-700 hover:border-oxford-500")">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>@(showNotes ? "Hide Scratchpad" : "Study Notes")</span>
+                    </button>
+
+                    <button type="button"
+                            @onclick="Close"
+                            aria-label="Close lecture theater"
+                            class="btn-press p-1.5 rounded text-oxford-400 hover:text-bone hover:bg-oxford-800 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Theater Body: Video + Optional Study Notes Rail -->
+            <div class="flex-1 overflow-y-auto grid grid-cols-1 @(showNotes ? "lg:grid-cols-12" : "") bg-black">
+                <!-- Embedded Distraction-Free Player -->
+                <div class="@(showNotes ? "lg:col-span-8" : "w-full") flex flex-col justify-center bg-black">
+                    <div class="relative w-full aspect-video bg-oxford-950">
+                        <iframe class="w-full h-full border-0"
+                                src="https://www.youtube-nocookie.com/embed/@VideoId?rel=0&modestbranding=1"
+                                title="@Item.Title"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+
+                <!-- Local-Persisted Lecture Scratchpad -->
+                @if (showNotes)
+                {
+                    <div class="lg:col-span-4 bg-oxford-900 border-t lg:border-t-0 lg:border-l border-oxford-800 p-4 flex flex-col justify-between min-h-[260px]">
+                        <div class="flex-1 flex flex-col">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-oxford-300">
+                                    Lecture Scratchpad
+                                </span>
+                                <span class="text-[11px] font-mono @(notesSaved ? "text-emerald-400" : "text-oxford-400")">
+                                    @(notesSaved ? "Saved locally" : "Auto-saves")
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-oxford-400 mb-3 leading-relaxed">
+                                Jot timestamps, key definitions, or exam questions while watching. Notes stay saved on this device for this lecture.
+                            </p>
+                            <textarea value="@studyNotes"
+                                      @oninput="OnNotesChanged"
+                                      placeholder="e.g.&#10;04:15 - Core intuition & proof sketch&#10;11:30 - Edge case to verify for midterm..."
+                                      class="flex-1 w-full min-h-[160px] p-3 rounded bg-oxford-950 border border-oxford-800 text-xs text-bone placeholder-oxford-500 font-mono leading-relaxed focus:outline-none focus:ring-1 focus:ring-flame resize-none"></textarea>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-oxford-800 flex items-center justify-between text-[11px]">
+                            <span class="text-oxford-400">@studyNotes.Length chars</span>
+                            <button type="button"
+                                    @onclick="CopyNotes"
+                                    class="btn-press inline-flex items-center gap-1 px-2.5 py-1 rounded bg-oxford-800 hover:bg-oxford-700 text-bone font-semibold transition-colors">
+                                @(notesCopied ? "Notes Copied!" : "Copy Notes")
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Theater Footer: Metadata & Quick Actions -->
+            <div class="px-5 py-3.5 bg-white text-oxford-900 border-t border-oxford-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-bold text-oxford-950">@Item.AuthorOrPublisher</span>
+                        @if (!string.IsNullOrEmpty(Item.MetricsInfo))
+                        {
+                            <span class="text-oxford-300">•</span>
+                            <span class="text-oxford-500 font-medium">@Item.MetricsInfo</span>
+                        }
+                        @if (Item.Metadata.TryGetValue("Duration", out var duration))
+                        {
+                            <span class="px-1.5 py-0.5 rounded bg-oxford-100 text-oxford-700 font-mono text-[11px] font-semibold">@duration</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button"
+                            @onclick="ToggleBookmark"
+                            class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs font-semibold transition-colors @(isBookmarked ? "bg-amber-50 border-amber-300 text-amber-900" : "bg-oxford-50 border-oxford-200 text-oxford-700 hover:bg-oxford-100")">
+                        <svg class="w-3.5 h-3.5 @(isBookmarked ? "fill-amber-500 text-amber-500" : "fill-none")" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        <span>@(isBookmarked ? "Saved" : "Save")</span>
+                    </button>
+
+                    @if (OnOpenCitation.HasDelegate)
+                    {
+                        <button type="button"
+                                @onclick="OpenCitation"
+                                class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-oxford-50 hover:bg-oxford-100 border border-oxford-200 text-oxford-800 text-xs font-semibold transition-colors">
+                            <span>Cite Lecture</span>
+                        </button>
+                    }
+
+                    <a href="@Item.Url"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-oxford-950 hover:bg-oxford-800 text-bone font-semibold text-xs transition-colors">
+                        <span>Open on YouTube</span>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public SourceItem? Item { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<SourceItem> OnOpenCitation { get; set; }
+
+    private bool showNotes = true;
+    private string studyNotes = string.Empty;
+    private bool notesSaved = false;
+    private bool notesCopied = false;
+    private string? loadedVideoId;
+
+    private string? VideoId =>
+        Item != null && Item.Metadata.TryGetValue("VideoId", out var vid) && !string.IsNullOrWhiteSpace(vid)
+            ? vid
+            : null;
+
+    private bool isBookmarked => Item != null && BookmarkService.IsBookmarked(Item.Id);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!string.IsNullOrEmpty(VideoId) && loadedVideoId != VideoId)
+        {
+            loadedVideoId = VideoId;
+            try
+            {
+                studyNotes = await JS.InvokeAsync<string>("isourcekoStorage.getVideoNotes", VideoId) ?? string.Empty;
+                notesSaved = false;
+                StateHasChanged();
+            }
+            catch { }
+        }
+        else if (string.IsNullOrEmpty(VideoId))
+        {
+            loadedVideoId = null;
+            studyNotes = string.Empty;
+        }
+    }
+
+    private async Task OnNotesChanged(ChangeEventArgs e)
+    {
+        studyNotes = e.Value?.ToString() ?? string.Empty;
+        if (!string.IsNullOrEmpty(VideoId))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("isourcekoStorage.saveVideoNotes", VideoId, studyNotes);
+                notesSaved = true;
+            }
+            catch { }
+        }
+    }
+
+    private async Task CopyNotes()
+    {
+        if (string.IsNullOrWhiteSpace(studyNotes)) return;
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", studyNotes);
+            notesCopied = true;
+            StateHasChanged();
+            await Task.Delay(1800);
+            notesCopied = false;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private void ToggleNotes()
+    {
+        showNotes = !showNotes;
+    }
+
+    private void ToggleBookmark()
+    {
+        if (Item != null)
+        {
+            BookmarkService.ToggleBookmark(Item);
+        }
+    }
+
+    private async Task OpenCitation()
+    {
+        if (Item != null)
+        {
+            var current = Item;
+            await OnClose.InvokeAsync();
+            await OnOpenCitation.InvokeAsync(current);
+        }
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

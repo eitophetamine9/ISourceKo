@@ -97,18 +97,16 @@
                 </div>
             }
 
-            <!-- Discipline & Details -->
+            <!-- Subject & Details -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                 <div>
-                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Academic Discipline</label>
+                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Subject</label>
                     <InputSelect @bind-Value="model.Field" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-2 focus:ring-oxford-950 cursor-pointer">
-                        <option value="@AcademicField.ComputerScience">Computer Science</option>
-                        <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
-                        <option value="@AcademicField.Mathematics">Mathematics</option>
-                        <option value="@AcademicField.Engineering">Engineering</option>
-                        <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
-                        <option value="@AcademicField.SocialSciences">Social Sciences</option>
-                        <option value="@AcademicField.BusinessAndEconomics">Business & Economics</option>
+                        @foreach (var subject in AcademicFieldExtensions.AllSubjects)
+                        {
+                            <option value="@subject">@subject.GetDisplayName()</option>
+                        }
+                        <option value="@AcademicField.General">@AcademicField.General.GetDisplayName()</option>
                     </InputSelect>
                 </div>
 
@@ -161,20 +159,48 @@
         model.Type = type;
     }
 
-    private void HandleFileSelected(InputFileChangeEventArgs e)
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
+        errorMessage = null;
         selectedFile = e.File;
         uploadedPreviewUrl = null;
+
+        if (selectedFile.Size > 10 * 1024 * 1024)
+        {
+            errorMessage = "Selected image exceeds the 10MB upload limit.";
+            selectedFile = null;
+            return;
+        }
+
+        try
+        {
+            var previewFile = await selectedFile.RequestImageFileAsync("image/jpeg", 640, 480);
+            using var previewStream = previewFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await previewStream.CopyToAsync(ms);
+            uploadedPreviewUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(ms.ToArray())}";
+        }
+        catch
+        {
+            // Keep selectedFile even if browser resize preview fails
+            uploadedPreviewUrl = null;
+        }
     }
 
     private async Task HandleSubmit()
     {
         errorMessage = null;
 
-        if (model.Type == SubmissionType.Link && string.IsNullOrWhiteSpace(model.SourceUrl))
+        if (model.Type == SubmissionType.Link)
         {
-            errorMessage = "Please enter a valid URL for your shared resource.";
-            return;
+            if (string.IsNullOrWhiteSpace(model.SourceUrl) ||
+                !Uri.TryCreate(model.SourceUrl.Trim(), UriKind.Absolute, out var parsedUri) ||
+                (parsedUri.Scheme != Uri.UriSchemeHttp && parsedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                errorMessage = "Please enter a valid http:// or https:// URL for your shared resource.";
+                return;
+            }
+            model.SourceUrl = parsedUri.ToString();
         }
 
         if (model.Type == SubmissionType.ImageNote && selectedFile == null && string.IsNullOrEmpty(model.ImagePath))

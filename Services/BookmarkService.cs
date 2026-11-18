@@ -1,20 +1,70 @@
+using System.Text.Json;
+using ISourceKO.Data;
+using ISourceKO.Data.Entities;
 using ISourceKO.Models;
 using ISourceKO.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ISourceKO.Services;
 
 public class BookmarkService : IBookmarkService
 {
-    private readonly List<SourceItem> _bookmarks = new();
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
+    private readonly ILogger<BookmarkService> _logger;
+    private readonly List<SourceItem> _cache = new();
     private readonly object _lock = new();
+    private string? _clientId;
+    private bool _isLoaded = false;
 
     public event Action? OnBookmarksChanged;
+
+    public BookmarkService(IDbContextFactory<AppDbContext> dbFactory, ILogger<BookmarkService> logger)
+    {
+        _dbFactory = dbFactory;
+        _logger = logger;
+    }
+
+    public async Task InitializeClientAsync(string clientId)
+    {
+        if (string.IsNullOrWhiteSpace(clientId)) return;
+
+        var normalized = clientId.Trim();
+        if (_isLoaded && string.Equals(_clientId, normalized, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _clientId = normalized;
+
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync();
+            var entities = await db.Bookmarks
+                .AsNoTracking()
+                .Where(b => b.ClientId == _clientId)
+                .OrderByDescending(b => b.BookmarkedAt)
+                .ToListAsync();
+
+            lock (_lock)
+            {
+                _cache.Clear();
+                _cache.AddRange(entities.Select(MapToModel));
+                _isLoaded = true;
+            }
+
+            OnBookmarksChanged?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not load bookmarks for client {ClientId} from SQLite.", _clientId);
+        }
+    }
 
     public IReadOnlyList<SourceItem> GetBookmarks()
     {
         lock (_lock)
         {
-            return _bookmarks.ToList().AsReadOnly();
+            return _cache.ToList().AsReadOnly();
         }
     }
 
@@ -22,39 +72,143 @@ public class BookmarkService : IBookmarkService
     {
         lock (_lock)
         {
-            return _bookmarks.Any(b => b.Id == id);
+            return _cache.Any(b => b.Id == id);
         }
     }
 
     public void ToggleBookmark(SourceItem item)
     {
+        var activeClient = _clientId ?? "default";
+        var compositeKey = BuildKey(activeClient, item.Id);
+
+        bool removed;
         lock (_lock)
         {
-            var existing = _bookmarks.FirstOrDefault(b => b.Id == item.Id);
+            var existing = _cache.FirstOrDefault(b => b.Id == item.Id);
             if (existing != null)
             {
-                _bookmarks.Remove(existing);
+                _cache.Remove(existing);
                 item.IsBookmarked = false;
+                removed = true;
             }
             else
             {
                 item.IsBookmarked = true;
-                _bookmarks.Add(item);
+                _cache.Insert(0, item);
+                removed = false;
             }
         }
+
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            if (removed)
+            {
+                var entity = db.Bookmarks.FirstOrDefault(b => b.Id == compositeKey || (b.ClientId == activeClient && b.SourceId == item.Id));
+                if (entity != null)
+                {
+                    db.Bookmarks.Remove(entity);
+                    db.SaveChanges();
+                }
+            }
+            else
+            {
+                if (!db.Bookmarks.Any(b => b.Id == compositeKey))
+                {
+                    db.Bookmarks.Add(MapToEntity(item, activeClient, compositeKey));
+                    db.SaveChanges();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist bookmark toggle for item {Id}", item.Id);
+        }
+
         OnBookmarksChanged?.Invoke();
     }
 
     public void RemoveBookmark(string id)
     {
+        var activeClient = _clientId ?? "default";
+        var compositeKey = BuildKey(activeClient, id);
+
         lock (_lock)
         {
-            var existing = _bookmarks.FirstOrDefault(b => b.Id == id);
+            var existing = _cache.FirstOrDefault(b => b.Id == id);
             if (existing != null)
             {
-                _bookmarks.Remove(existing);
+                _cache.Remove(existing);
             }
         }
+
+        try
+        {
+            using var db = _dbFactory.CreateDbContext();
+            var entity = db.Bookmarks.FirstOrDefault(b => b.Id == compositeKey || (b.ClientId == activeClient && b.SourceId == id));
+            if (entity != null)
+            {
+                db.Bookmarks.Remove(entity);
+                db.SaveChanges();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove bookmark {Id} from SQLite", id);
+        }
+
         OnBookmarksChanged?.Invoke();
+    }
+
+    private static string BuildKey(string clientId, string sourceId) => $"{clientId}:{sourceId}";
+
+    private static SourceItem MapToModel(BookmarkEntity e)
+    {
+        List<string> tags;
+        try { tags = JsonSerializer.Deserialize<List<string>>(e.TagsJson) ?? new(); }
+        catch { tags = new(); }
+
+        Dictionary<string, string> metadata;
+        try { metadata = JsonSerializer.Deserialize<Dictionary<string, string>>(e.MetadataJson) ?? new(); }
+        catch { metadata = new(); }
+
+        return new SourceItem
+        {
+            Id = string.IsNullOrWhiteSpace(e.SourceId) ? e.Id : e.SourceId,
+            Title = e.Title,
+            Description = e.Description,
+            Url = e.Url,
+            Platform = e.Platform,
+            AuthorOrPublisher = e.AuthorOrPublisher,
+            PublishedDate = e.PublishedDate,
+            ThumbnailUrl = e.ThumbnailUrl,
+            Tags = tags,
+            MetricsInfo = e.MetricsInfo,
+            Field = e.Field,
+            Metadata = metadata,
+            IsBookmarked = true
+        };
+    }
+
+    private static BookmarkEntity MapToEntity(SourceItem item, string clientId, string compositeKey)
+    {
+        return new BookmarkEntity
+        {
+            Id = compositeKey,
+            ClientId = clientId,
+            SourceId = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            Url = item.Url,
+            Platform = item.Platform,
+            AuthorOrPublisher = item.AuthorOrPublisher,
+            PublishedDate = item.PublishedDate,
+            ThumbnailUrl = item.ThumbnailUrl,
+            TagsJson = JsonSerializer.Serialize(item.Tags ?? new List<string>()),
+            MetricsInfo = item.MetricsInfo,
+            Field = item.Field,
+            MetadataJson = JsonSerializer.Serialize(item.Metadata ?? new Dictionary<string, string>()),
+            BookmarkedAt = DateTime.UtcNow
+        };
     }
 }

@@ -4,6 +4,7 @@ public enum SourcePlatform
 {
     All,
     YouTube,
+    OpenAlex,
     ScienceDirect,
     SemanticScholar,
     StudentCommunity

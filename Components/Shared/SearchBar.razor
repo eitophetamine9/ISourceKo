@@ -25,17 +25,14 @@
             }
         </div>
 
-        <!-- Academic Discipline Selector -->
-        <div class="relative min-w-[180px]">
+        <!-- Subject Selector -->
+        <div class="relative min-w-[200px]">
             <select @bind="Query.Field" class="w-full py-3 px-3 bg-bone border border-oxford-200 rounded text-oxford-800 text-sm focus:outline-none focus:ring-2 focus:ring-oxford-950 cursor-pointer transition-all">
-                <option value="@AcademicField.General">All Disciplines</option>
-                <option value="@AcademicField.ComputerScience">Computer Science</option>
-                <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
-                <option value="@AcademicField.Mathematics">Mathematics</option>
-                <option value="@AcademicField.Engineering">Engineering</option>
-                <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
-                <option value="@AcademicField.SocialSciences">Social Sciences</option>
-                <option value="@AcademicField.BusinessAndEconomics">Business & Economics</option>
+                <option value="@AcademicField.General">All Subjects</option>
+                @foreach (var subject in AcademicFieldExtensions.AllSubjects)
+                {
+                    <option value="@subject">@subject.GetDisplayName()</option>
+                }
             </select>
         </div>
 
@@ -65,6 +62,12 @@
                 @onclick="() => SelectPlatform(SourcePlatform.YouTube)"
                 class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.YouTube ? "bg-youtube text-white shadow-subtle ring-2 ring-red-300" : "bg-youtube-light text-youtube hover:bg-red-100 border border-red-200")">
             YouTube Lectures
+        </button>
+
+        <button type="button"
+                @onclick="() => SelectPlatform(SourcePlatform.OpenAlex)"
+                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.OpenAlex ? "bg-openalex text-white shadow-subtle ring-2 ring-teal-300" : "bg-openalex-light text-openalex-dark hover:bg-teal-100 border border-teal-200")">
+            OpenAlex (Live)
         </button>
 
         <button type="button"

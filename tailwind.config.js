@@ -50,6 +50,11 @@ module.exports = {
           light: '#F0F9FF',
           dark: '#0369A1',
         },
+        openalex: {
+          DEFAULT: '#0F766E',
+          light: '#F0FDFA',
+          dark: '#115E59',
+        },
         evergreen: {
           DEFAULT: '#059669',
           light: '#ECFDF5',

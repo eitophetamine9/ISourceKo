@@ -159,20 +159,48 @@
         model.Type = type;
     }
 
-    private void HandleFileSelected(InputFileChangeEventArgs e)
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
+        errorMessage = null;
         selectedFile = e.File;
         uploadedPreviewUrl = null;
+
+        if (selectedFile.Size > 10 * 1024 * 1024)
+        {
+            errorMessage = "Selected image exceeds the 10MB upload limit.";
+            selectedFile = null;
+            return;
+        }
+
+        try
+        {
+            var previewFile = await selectedFile.RequestImageFileAsync("image/jpeg", 640, 480);
+            using var previewStream = previewFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await previewStream.CopyToAsync(ms);
+            uploadedPreviewUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(ms.ToArray())}";
+        }
+        catch
+        {
+            // Keep selectedFile even if browser resize preview fails
+            uploadedPreviewUrl = null;
+        }
     }
 
     private async Task HandleSubmit()
     {
         errorMessage = null;
 
-        if (model.Type == SubmissionType.Link && string.IsNullOrWhiteSpace(model.SourceUrl))
+        if (model.Type == SubmissionType.Link)
         {
-            errorMessage = "Please enter a valid URL for your shared resource.";
-            return;
+            if (string.IsNullOrWhiteSpace(model.SourceUrl) ||
+                !Uri.TryCreate(model.SourceUrl.Trim(), UriKind.Absolute, out var parsedUri) ||
+                (parsedUri.Scheme != Uri.UriSchemeHttp && parsedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                errorMessage = "Please enter a valid http:// or https:// URL for your shared resource.";
+                return;
+            }
+            model.SourceUrl = parsedUri.ToString();
         }
 
         if (model.Type == SubmissionType.ImageNote && selectedFile == null && string.IsNullOrEmpty(model.ImagePath))

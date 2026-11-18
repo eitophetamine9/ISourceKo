@@ -20,14 +20,14 @@
     <link rel="stylesheet" href="css/tailwind.min.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <ImportMap />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body class="bg-[#FBFBF9] text-[#0C131F] font-sans antialiased min-h-screen selection:bg-flame/15 selection:text-oxford-950 overflow-x-hidden">
     <!-- Dynamic Reading Scroll Progress Bar -->
     <div id="reading-progress" class="fixed top-0 left-0 h-[2.5px] bg-gradient-to-r from-flame via-amber-500 to-academic z-50 transition-all duration-75 pointer-events-none" style="width: 0%"></div>
 
-    <Routes />
+    <Routes @rendermode="PageRenderMode" />
     <ReconnectModal />
     
     <!-- Core Blazor Framework -->
@@ -71,3 +71,11 @@
 </body>
 
 </html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+}

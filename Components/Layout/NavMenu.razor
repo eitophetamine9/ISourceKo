@@ -1,5 +1,6 @@
 @inject IBookmarkService BookmarkService
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <header class="sticky top-0 z-40 bg-[#FBFBF9]/95 backdrop-blur-md border-b border-oxford-200/80 transition-all duration-200">
@@ -66,7 +67,12 @@
 
             <!-- Mobile menu trigger -->
             <div class="flex items-center md:hidden">
-                <button type="button" @onclick="ToggleMobileMenu" aria-label="Toggle navigation" class="p-2 rounded text-oxford-700 hover:text-oxford-950 hover:bg-oxford-100">
+                <button type="button"
+                        @onclick="ToggleMobileMenu"
+                        aria-label="Toggle navigation"
+                        aria-expanded="@isMobileMenuOpen"
+                        aria-controls="mobile-nav-drawer"
+                        class="btn-press p-2 rounded text-oxford-700 hover:text-oxford-950 hover:bg-oxford-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-oxford-900">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         @if (isMobileMenuOpen)
                         {
@@ -85,18 +91,18 @@
     <!-- Mobile Drawer -->
     @if (isMobileMenuOpen)
     {
-        <div class="md:hidden border-t border-oxford-200 bg-[#FBFBF9] px-4 pt-3 pb-5 space-y-2 animate-fade-in">
-            <NavLink href="" Match="NavLinkMatch.All" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" @onclick="ToggleMobileMenu">
+        <div id="mobile-nav-drawer" class="md:hidden border-t border-oxford-200 bg-[#FBFBF9] px-4 pt-3 pb-5 space-y-2 animate-fade-in">
+            <NavLink href="" Match="NavLinkMatch.All" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" ActiveClass="!bg-white !text-oxford-950 !font-semibold border border-oxford-200" @onclick="CloseMobileMenu">
                 Search Hub
             </NavLink>
-            <NavLink href="community" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" @onclick="ToggleMobileMenu">
-                Peer Notes & Links
+            <NavLink href="community" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" ActiveClass="!bg-white !text-oxford-950 !font-semibold border border-oxford-200" @onclick="CloseMobileMenu">
+                Peer Notes &amp; Links
             </NavLink>
-            <NavLink href="bookmarks" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" @onclick="ToggleMobileMenu">
+            <NavLink href="bookmarks" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" ActiveClass="!bg-white !text-oxford-950 !font-semibold border border-oxford-200" @onclick="CloseMobileMenu">
                 Saved Sources (@bookmarkCount)
             </NavLink>
             <div class="pt-2">
-                <a href="submit" class="btn-flame w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded font-medium text-sm" @onclick="ToggleMobileMenu">
+                <a href="submit" class="btn-flame w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded font-medium text-sm" @onclick="CloseMobileMenu">
                     + Contribute Source
                 </a>
             </div>
@@ -111,6 +117,7 @@
     protected override void OnInitialized()
     {
         BookmarkService.OnBookmarksChanged += HandleBookmarksChanged;
+        Navigation.LocationChanged += HandleLocationChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -131,13 +138,35 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private async void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (isMobileMenuOpen)
+        {
+            isMobileMenuOpen = false;
+            await InvokeAsync(StateHasChanged);
+        }
+
+        try
+        {
+            await Task.Delay(120);
+            await JS.InvokeVoidAsync("initISourceKOAnimations");
+        }
+        catch { }
+    }
+
     private void ToggleMobileMenu()
     {
         isMobileMenuOpen = !isMobileMenuOpen;
     }
 
+    private void CloseMobileMenu()
+    {
+        isMobileMenuOpen = false;
+    }
+
     public void Dispose()
     {
         BookmarkService.OnBookmarksChanged -= HandleBookmarksChanged;
+        Navigation.LocationChanged -= HandleLocationChanged;
     }
 }

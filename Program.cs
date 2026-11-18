@@ -3,9 +3,40 @@ using ISourceKO.Data;
 using ISourceKO.Services;
 using ISourceKO.Services.Interfaces;
 using ISourceKO.Services.Providers;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Dynamic PORT binding for cloud hosts (Railway, Render, Fly.io)
+var portEnv = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(portEnv) && int.TryParse(portEnv, out var port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
+// Persistent volume directory support (e.g., DATA_DIR=/data on Railway)
+var dataDir = Environment.GetEnvironmentVariable("DATA_DIR");
+if (!string.IsNullOrWhiteSpace(dataDir))
+{
+    Directory.CreateDirectory(dataDir);
+    var keysDir = Path.Combine(dataDir, "keys");
+    Directory.CreateDirectory(keysDir);
+
+    builder.Services.AddDataProtection()
+        .SetApplicationName("ISourceKO")
+        .PersistKeysToFileSystem(new DirectoryInfo(keysDir));
+}
+
+// Forwarded headers for reverse proxies terminating TLS
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -37,7 +68,13 @@ builder.Services.AddHttpClient("Elsevier", client =>
 });
 
 // Configure SQLite Persistence via Entity Framework Core
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=isourceko.db";
+var envConnString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+var connectionString = !string.IsNullOrWhiteSpace(envConnString)
+    ? envConnString
+    : !string.IsNullOrWhiteSpace(dataDir)
+        ? $"Data Source={Path.Combine(dataDir, "isourceko.db")}"
+        : (builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=isourceko.db");
+
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
@@ -61,6 +98,8 @@ var app = builder.Build();
 // Initialize SQLite database schema and seed initial data if empty
 await DatabaseInitializer.InitializeAsync(app.Services);
 
+app.UseForwardedHeaders();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -69,11 +108,38 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+
+// Cloud proxies (Railway/Render) enforce HTTPS at the edge; redirect locally only
+if (string.IsNullOrWhiteSpace(portEnv))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAntiforgery();
 
 app.UseStaticFiles();
+
+// Serve persistent uploaded student note photos when DATA_DIR volume is mounted
+if (!string.IsNullOrWhiteSpace(dataDir))
+{
+    var persistentUploads = Path.Combine(dataDir, "uploads", "student-submissions");
+    Directory.CreateDirectory(persistentUploads);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(persistentUploads),
+        RequestPath = "/uploads/student-submissions"
+    });
+}
+
 app.MapStaticAssets();
+
+// Cloud health check endpoint
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "ISourceKO",
+    utc = DateTime.UtcNow
+}));
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

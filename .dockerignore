@@ -1,0 +1,22 @@
+# Build outputs
+bin/
+obj/
+
+# Local caches & VCS
+.git/
+.github/
+.vs/
+.dotnet/
+node_modules/
+
+# Local database & user uploads
+*.db
+*.db-shm
+*.db-wal
+wwwroot/uploads/student-submissions/*
+!wwwroot/uploads/student-submissions/.gitkeep
+
+# Local user settings
+*.user
+*.suo
+npm-debug.log

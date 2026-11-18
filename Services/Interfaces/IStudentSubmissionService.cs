@@ -14,5 +14,6 @@ public interface IStudentSubmissionService
     Task<StudentSubmission?> GetByIdAsync(string id);
     Task<StudentSubmission> AddSubmissionAsync(StudentSubmission submission);
     Task<int> UpvoteAsync(string id);
+    Task<int> RemoveUpvoteAsync(string id);
     Task<bool> AddCommentAsync(string submissionId, string author, string text);
 }

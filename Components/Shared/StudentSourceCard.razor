@@ -1,6 +1,7 @@
 @using ISourceKO.Models
 @using ISourceKO.Models.Enums
 @inject IStudentSubmissionService SubmissionService
+@inject IJSRuntime JS
 
 <article class="card-lift bg-white rounded-lg border border-oxford-200/90 shadow-subtle flex flex-col justify-between overflow-hidden group relative">
     <!-- Top-Voted Highlight Pip -->
@@ -8,7 +9,7 @@
     {
         <div class="absolute top-2 right-2 z-10">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-flame text-white shadow-subtle tracking-tight animate-scale-in">
-                🔥 Top Study Note
+                Top Study Note
             </span>
         </div>
     }
@@ -27,12 +28,12 @@
                     <svg class="w-3.5 h-3.5 text-flame" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                     </svg>
-                    Expand Note Photo
+                    Inspect &amp; Zoom Note
                 </span>
             </div>
             <div class="absolute top-2 left-2">
                 <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-oxford-950/80 text-bone shadow-subtle">
-                    📷 Handwritten
+                    Handwritten Note
                 </span>
             </div>
         </div>
@@ -86,28 +87,89 @@
             }
         </div>
 
-        <!-- Student Attribution + Dynamic Upvote Pop Button -->
-        <div class="mt-5 pt-3.5 border-t border-oxford-100 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded bg-oxford-900 text-bone font-serif text-xs font-bold flex items-center justify-center border border-oxford-800 shadow-subtle">
+        <!-- Student Attribution, Comments Trigger & Guarded Upvote Button -->
+        <div class="mt-5 pt-3.5 border-t border-oxford-100 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="w-7 h-7 rounded bg-oxford-900 text-bone font-serif text-xs font-bold flex items-center justify-center border border-oxford-800 shadow-subtle shrink-0">
                     @(Submission.StudentName.FirstOrDefault())
                 </div>
-                <div class="text-xs">
-                    <p class="font-bold text-oxford-900 leading-none">@Submission.StudentName</p>
-                    <p class="text-oxford-400 text-[11px] mt-0.5">@(Submission.SchoolOrProgram ?? "Student")</p>
+                <div class="text-xs min-w-0">
+                    <p class="font-bold text-oxford-900 leading-none truncate">@Submission.StudentName</p>
+                    <p class="text-oxford-400 text-[11px] mt-0.5 truncate">@(Submission.SchoolOrProgram ?? "Student")</p>
                 </div>
             </div>
 
-            <!-- Upvote Button with Keyframe Burst Animation -->
-            <button type="button"
-                    @onclick="Upvote"
-                    class="btn-press inline-flex items-center gap-1.5 px-3 py-1 rounded border transition-all text-xs font-bold @(isUpvoted ? "bg-evergreen-light border-emerald-400 text-evergreen-dark animate-upvote-burst shadow-sm" : "border-oxford-200 hover:border-evergreen hover:bg-evergreen-light text-oxford-700")">
-                <svg class="w-3.5 h-3.5 @(isUpvoted ? "text-evergreen-dark" : "text-oxford-400")" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
-                </svg>
-                <span>@Submission.Upvotes</span>
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <!-- Peer Discussion Toggle -->
+                <button type="button"
+                        @onclick="ToggleComments"
+                        title="Peer discussion notes"
+                        class="btn-press inline-flex items-center gap-1 px-2.5 py-1 rounded border text-xs font-semibold transition-colors @(showComments ? "bg-oxford-950 text-bone border-oxford-950" : "border-oxford-200 text-oxford-600 hover:bg-oxford-50")">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                    <span>@Submission.Comments.Count</span>
+                </button>
+
+                <!-- Upvote Button with localStorage De-duplication Guard -->
+                <button type="button"
+                        @onclick="ToggleUpvote"
+                        disabled="@isUpvoting"
+                        title="@(isUpvoted ? "Remove your upvote" : "Upvote this study note")"
+                        class="btn-press inline-flex items-center gap-1.5 px-3 py-1 rounded border transition-all text-xs font-bold @(isUpvoted ? "bg-evergreen-light border-emerald-400 text-evergreen-dark animate-upvote-burst shadow-sm" : "border-oxford-200 hover:border-evergreen hover:bg-evergreen-light text-oxford-700")">
+                    <svg class="w-3.5 h-3.5 @(isUpvoted ? "text-evergreen-dark" : "text-oxford-400")" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+                    </svg>
+                    <span>@Submission.Upvotes</span>
+                </button>
+            </div>
         </div>
+
+        <!-- Expandable SQLite-Persisted Peer Discussion Thread -->
+        @if (showComments)
+        {
+            <div class="mt-4 pt-3.5 border-t border-oxford-100 space-y-3 animate-fade-in">
+                <div class="space-y-2 max-h-44 overflow-y-auto pr-1">
+                    @if (Submission.Comments.Any())
+                    {
+                        @foreach (var comment in Submission.Comments)
+                        {
+                            <div class="p-2.5 rounded bg-bone border border-oxford-200/70 text-xs">
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <span class="font-bold text-oxford-900">@comment.AuthorName</span>
+                                    <span class="text-[10px] font-mono text-oxford-400">@comment.CreatedAt.ToString("MMM dd")</span>
+                                </div>
+                                <p class="text-oxford-700 leading-relaxed">@comment.Content</p>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-[11px] text-oxford-400 italic">No peer remarks yet. Ask a clarifying question or thank the contributor.</p>
+                    }
+                </div>
+
+                <form @onsubmit="PostComment" class="space-y-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input @bind="newCommentAuthor"
+                               type="text"
+                               placeholder="Your name"
+                               class="sm:col-span-1 px-2.5 py-1.5 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-oxford-900" />
+                        <div class="sm:col-span-2 flex gap-1.5">
+                            <input @bind="newCommentText"
+                                   type="text"
+                                   placeholder="Add a peer comment or question..."
+                                   class="flex-1 px-2.5 py-1.5 bg-bone border border-oxford-200 rounded text-xs text-oxford-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-oxford-900" />
+                            <button type="submit"
+                                    disabled="@(isPostingComment || string.IsNullOrWhiteSpace(newCommentText))"
+                                    class="btn-press px-3 py-1.5 rounded bg-oxford-950 hover:bg-oxford-800 disabled:opacity-40 text-bone text-xs font-semibold shrink-0">
+                                Post
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        }
     </div>
 </article>
 
@@ -116,11 +178,84 @@
     [Parameter] public EventCallback<string> OnViewImage { get; set; }
 
     private bool isUpvoted = false;
+    private bool isUpvoting = false;
+    private bool showComments = false;
+    private string newCommentAuthor = string.Empty;
+    private string newCommentText = string.Empty;
+    private bool isPostingComment = false;
+    private string? checkedSubmissionId;
 
-    private async Task Upvote()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var newCount = await SubmissionService.UpvoteAsync(Submission.Id);
-        Submission.Upvotes = newCount;
-        isUpvoted = true;
+        if (checkedSubmissionId != Submission.Id)
+        {
+            checkedSubmissionId = Submission.Id;
+            try
+            {
+                isUpvoted = await JS.InvokeAsync<bool>("isourcekoStorage.hasUpvoted", Submission.Id);
+                StateHasChanged();
+            }
+            catch { }
+        }
+    }
+
+    private async Task ToggleUpvote()
+    {
+        if (isUpvoting) return;
+        isUpvoting = true;
+
+        try
+        {
+            if (isUpvoted)
+            {
+                var updated = await SubmissionService.RemoveUpvoteAsync(Submission.Id);
+                Submission.Upvotes = updated;
+                isUpvoted = false;
+                try { await JS.InvokeVoidAsync("isourcekoStorage.unmarkUpvoted", Submission.Id); } catch { }
+            }
+            else
+            {
+                var updated = await SubmissionService.UpvoteAsync(Submission.Id);
+                Submission.Upvotes = updated;
+                isUpvoted = true;
+                try { await JS.InvokeVoidAsync("isourcekoStorage.markUpvoted", Submission.Id); } catch { }
+            }
+        }
+        finally
+        {
+            isUpvoting = false;
+        }
+    }
+
+    private void ToggleComments()
+    {
+        showComments = !showComments;
+    }
+
+    private async Task PostComment()
+    {
+        if (isPostingComment || string.IsNullOrWhiteSpace(newCommentText)) return;
+        isPostingComment = true;
+
+        try
+        {
+            var author = string.IsNullOrWhiteSpace(newCommentAuthor) ? "Fellow Student" : newCommentAuthor.Trim();
+            var content = newCommentText.Trim();
+            var saved = await SubmissionService.AddCommentAsync(Submission.Id, author, content);
+            if (saved)
+            {
+                Submission.Comments.Insert(0, new StudentComment
+                {
+                    AuthorName = author,
+                    Content = content,
+                    CreatedAt = DateTime.UtcNow
+                });
+                newCommentText = string.Empty;
+            }
+        }
+        finally
+        {
+            isPostingComment = false;
+        }
     }
 }

@@ -1,5 +1,6 @@
 @page "/bookmarks"
 @rendermode InteractiveServer
+@using ISourceKO.Services
 @inject IBookmarkService BookmarkService
 @inject IJSRuntime JS
 @implements IDisposable
@@ -14,7 +15,7 @@
                 <svg class="w-3.5 h-3.5 fill-amber-500 text-amber-500" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
-                Personal Study Syllabus
+                Personal Study Syllabus • SQLite Persisted
             </span>
             <h1 class="font-serif text-2xl sm:text-3xl font-bold text-oxford-950 tracking-tight">
                 Saved Academic Sources
@@ -26,7 +27,16 @@
 
         @if (bookmarks.Any())
         {
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <select @bind="exportStyle"
+                        aria-label="Citation export style"
+                        class="py-1.5 px-2.5 bg-bone border border-oxford-300 rounded text-xs font-semibold text-oxford-800 focus:outline-none focus:ring-1 focus:ring-oxford-950 cursor-pointer">
+                    <option value="@CitationStyle.Apa7">APA 7th</option>
+                    <option value="@CitationStyle.Mla9">MLA 9th</option>
+                    <option value="@CitationStyle.Chicago17">Chicago 17th</option>
+                    <option value="@CitationStyle.BibTeX">BibTeX (.bib)</option>
+                </select>
+
                 <button type="button"
                         @onclick="CopyAllCitations"
                         class="btn-press inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-oxford-300 text-oxford-900 text-xs font-bold rounded shadow-subtle hover:bg-oxford-50 transition-all">
@@ -42,9 +52,19 @@
                         <svg class="w-3.5 h-3.5 text-oxford-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        <span>Export All Citations</span>
+                        <span>Copy All</span>
                     }
                 </button>
+
+                @if (exportStyle == CitationStyle.BibTeX)
+                {
+                    <button type="button"
+                            @onclick="DownloadAllBibTeX"
+                            class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-oxford-950 text-bone text-xs font-bold rounded shadow-subtle hover:bg-oxford-800 transition-all">
+                        <span>Download .bib</span>
+                    </button>
+                }
+
                 <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-flame text-white font-mono shadow-subtle">@bookmarks.Count</span>
             </div>
         }
@@ -56,7 +76,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
                 @foreach (var item in bookmarks)
                 {
-                    <SourceCard Item="item" />
+                    <SourceCard Item="item"
+                                OnWatchVideo="OpenVideoModal"
+                                OnOpenCitation="OpenCitationModal" />
                 }
             </div>
         }
@@ -70,7 +92,7 @@
                 </div>
                 <h3 class="font-serif text-base font-semibold text-oxford-900">Your reading list is empty</h3>
                 <p class="mt-1 text-xs text-oxford-600 leading-relaxed">
-                    Pin papers, lectures, or peer notes while searching the hub to assemble your research bibliography.
+                    Pin papers, lectures, or peer notes while searching the hub to assemble your persistent research bibliography.
                 </p>
                 <div class="mt-5">
                     <a href="" class="btn-flame inline-flex items-center gap-1.5 px-4 py-2 rounded text-xs">
@@ -82,9 +104,21 @@
     </div>
 </div>
 
+<!-- In-App Lecture Theater Modal -->
+<VideoPlayerModal Item="@activeVideoItem"
+                  OnClose="CloseVideoModal"
+                  OnOpenCitation="OpenCitationModal" />
+
+<!-- Multi-Style Academic Citation Modal -->
+<CitationModal Item="@activeCitationItem"
+               OnClose="CloseCitationModal" />
+
 @code {
     private List<SourceItem> bookmarks = new();
+    private CitationStyle exportStyle = CitationStyle.Apa7;
     private bool isAllCopied = false;
+    private SourceItem? activeVideoItem;
+    private SourceItem? activeCitationItem;
 
     protected override void OnInitialized()
     {
@@ -105,15 +139,11 @@
 
     private async Task CopyAllCitations()
     {
-        var bibliography = string.Join("\n\n", bookmarks.Select(b =>
-        {
-            var year = b.PublishedDate?.Year.ToString() ?? "n.d.";
-            return $"{b.AuthorOrPublisher} ({year}). {b.Title}. {b.Url}";
-        }));
+        var bibliography = CitationFormatter.FormatAll(bookmarks, exportStyle);
 
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", bibliography);
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", bibliography);
             isAllCopied = true;
             StateHasChanged();
             await Task.Delay(2000);
@@ -122,6 +152,21 @@
         }
         catch { }
     }
+
+    private async Task DownloadAllBibTeX()
+    {
+        var bib = CitationFormatter.FormatAll(bookmarks, CitationStyle.BibTeX);
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.downloadTextFile", "isourceko-syllabus.bib", bib);
+        }
+        catch { }
+    }
+
+    private void OpenVideoModal(SourceItem item) => activeVideoItem = item;
+    private void CloseVideoModal() => activeVideoItem = null;
+    private void OpenCitationModal(SourceItem item) => activeCitationItem = item;
+    private void CloseCitationModal() => activeCitationItem = null;
 
     public void Dispose()
     {

@@ -1,0 +1,177 @@
+@using ISourceKO.Models
+@using ISourceKO.Services
+@inject IJSRuntime JS
+
+@if (Item != null)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-oxford-950/75 backdrop-blur-sm animate-fade-in"
+         @onclick="Close">
+        <div class="relative w-full max-w-2xl bg-white rounded-xl overflow-hidden shadow-pop border border-oxford-200 flex flex-col animate-scale-in"
+             @onclick:stopPropagation="true">
+
+            <!-- Header -->
+            <div class="px-6 py-4 bg-oxford-950 text-bone flex items-center justify-between gap-4 border-b border-oxford-800">
+                <div class="min-w-0">
+                    <span class="text-[10px] font-mono uppercase tracking-widest text-flame font-bold">
+                        Academic Citation Suite
+                    </span>
+                    <h3 class="font-serif text-base font-bold text-bone truncate mt-0.5">
+                        @Item.Title
+                    </h3>
+                </div>
+                <button type="button"
+                        @onclick="Close"
+                        aria-label="Close citation modal"
+                        class="btn-press p-1.5 rounded text-oxford-400 hover:text-bone hover:bg-oxford-800 transition-colors shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Style Tabs -->
+            <div class="px-6 pt-4 pb-3 bg-bone border-b border-oxford-200 flex flex-wrap items-center gap-2">
+                <button type="button"
+                        @onclick="() => SelectStyle(CitationStyle.Apa7)"
+                        class="interactive-tab px-3 py-1.5 rounded text-xs font-bold transition-all @(selectedStyle == CitationStyle.Apa7 ? "bg-oxford-950 text-bone shadow-subtle" : "bg-white text-oxford-700 border border-oxford-200 hover:bg-oxford-50")">
+                    APA 7th
+                </button>
+                <button type="button"
+                        @onclick="() => SelectStyle(CitationStyle.Mla9)"
+                        class="interactive-tab px-3 py-1.5 rounded text-xs font-bold transition-all @(selectedStyle == CitationStyle.Mla9 ? "bg-oxford-950 text-bone shadow-subtle" : "bg-white text-oxford-700 border border-oxford-200 hover:bg-oxford-50")">
+                    MLA 9th
+                </button>
+                <button type="button"
+                        @onclick="() => SelectStyle(CitationStyle.Chicago17)"
+                        class="interactive-tab px-3 py-1.5 rounded text-xs font-bold transition-all @(selectedStyle == CitationStyle.Chicago17 ? "bg-oxford-950 text-bone shadow-subtle" : "bg-white text-oxford-700 border border-oxford-200 hover:bg-oxford-50")">
+                    Chicago 17th
+                </button>
+                <button type="button"
+                        @onclick="() => SelectStyle(CitationStyle.BibTeX)"
+                        class="interactive-tab px-3 py-1.5 rounded text-xs font-bold transition-all @(selectedStyle == CitationStyle.BibTeX ? "bg-oxford-950 text-bone shadow-subtle" : "bg-white text-oxford-700 border border-oxford-200 hover:bg-oxford-50")">
+                    BibTeX (.bib)
+                </button>
+            </div>
+
+            <!-- Formatted Output -->
+            <div class="p-6 space-y-4">
+                <div class="relative rounded-lg border border-oxford-200 bg-bone p-4">
+                    @if (selectedStyle == CitationStyle.BibTeX)
+                    {
+                        <pre class="text-xs font-mono text-oxford-900 whitespace-pre-wrap leading-relaxed overflow-x-auto select-all">@FormattedCitation</pre>
+                    }
+                    else
+                    {
+                        <p class="text-sm font-serif text-oxford-950 leading-relaxed select-all pl-6 -indent-6">@FormattedCitation</p>
+                    }
+                </div>
+
+                <!-- Source Metadata Strip -->
+                <div class="flex flex-wrap items-center gap-2 text-[11px] text-oxford-500">
+                    <PlatformBadge Platform="Item.Platform" />
+                    @if (Item.Metadata.TryGetValue("DOI", out var doi) && !string.IsNullOrWhiteSpace(doi))
+                    {
+                        <span class="px-2 py-0.5 rounded bg-oxford-50 border border-oxford-200 font-mono text-oxford-700">
+                            DOI: @doi
+                        </span>
+                    }
+                    @if (Item.PublishedDate.HasValue)
+                    {
+                        <span class="px-2 py-0.5 rounded bg-oxford-50 border border-oxford-200 font-mono text-oxford-700">
+                            Year: @Item.PublishedDate.Value.Year
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="px-6 py-4 bg-bone border-t border-oxford-200 flex items-center justify-between gap-3">
+                <span class="text-[11px] text-oxford-500">
+                    Verify italicized titles &amp; punctuation per your instructor's rubric.
+                </span>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    @if (selectedStyle == CitationStyle.BibTeX)
+                    {
+                        <button type="button"
+                                @onclick="DownloadBibTeX"
+                                class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-oxford-50 border border-oxford-300 text-oxford-900 text-xs font-semibold transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span>Download .bib</span>
+                        </button>
+                    }
+
+                    <button type="button"
+                            @onclick="CopyCitation"
+                            class="btn-flame inline-flex items-center gap-1.5 px-4 py-1.5 rounded text-xs font-bold shadow-subtle">
+                        @if (isCopied)
+                        {
+                            <svg class="w-3.5 h-3.5 animate-scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Copied to Clipboard!</span>
+                        }
+                        else
+                        {
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span>Copy Citation</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public SourceItem? Item { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private CitationStyle selectedStyle = CitationStyle.Apa7;
+    private bool isCopied = false;
+
+    private string FormattedCitation => Item == null ? string.Empty : CitationFormatter.Format(Item, selectedStyle);
+
+    private void SelectStyle(CitationStyle style)
+    {
+        selectedStyle = style;
+        isCopied = false;
+    }
+
+    private async Task CopyCitation()
+    {
+        if (Item == null) return;
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", FormattedCitation);
+            isCopied = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            isCopied = false;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task DownloadBibTeX()
+    {
+        if (Item == null) return;
+        try
+        {
+            var bib = CitationFormatter.Format(Item, CitationStyle.BibTeX);
+            var safeName = $"isourceko-{Item.Id}.bib";
+            await JS.InvokeVoidAsync("isourcekoStorage.downloadTextFile", safeName, bib);
+        }
+        catch { }
+    }
+
+    private async Task Close()
+    {
+        isCopied = false;
+        await OnClose.InvokeAsync();
+    }
+}

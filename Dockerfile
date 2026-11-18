@@ -9,14 +9,14 @@ COPY Components/ ./Components/
 COPY wwwroot/ ./wwwroot/
 RUN npm run build:css
 
-# Stage 2: Restore and publish .NET 10 Blazor Web App
+# Stage 2: Restore (with Razor components present so Microsoft.AspNetCore.App.Internal.Assets / blazor.web.js is included) and publish
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS dotnet-builder
 WORKDIR /src
-COPY ISourceKO.csproj nuget.config ./
-RUN dotnet restore ISourceKO.csproj
 COPY . .
 COPY --from=css-builder /src/wwwroot/css/tailwind.min.css ./wwwroot/css/tailwind.min.css
-RUN dotnet publish ISourceKO.csproj -c Release -o /app/publish --no-restore
+RUN dotnet restore ISourceKO.csproj \
+    && dotnet publish ISourceKO.csproj -c Release -o /app/publish --no-restore \
+    && test -f /app/publish/wwwroot/_framework/blazor.web.js
 
 # Stage 3: Slim ASP.NET Core 10 runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

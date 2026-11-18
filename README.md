@@ -10,8 +10,17 @@
   <a href="https://learn.microsoft.com/dotnet/csharp/" target="_blank">
     <img src="https://img.shields.io/badge/C%23_13-239120?style=flat&logo=c-sharp&logoColor=white" alt="C#" />
   </a>
+  <a href="https://learn.microsoft.com/ef/core/" target="_blank">
+    <img src="https://img.shields.io/badge/EF_Core_10-512BD4?style=flat&logo=dotnet&logoColor=white" alt="Entity Framework Core" />
+  </a>
+  <a href="https://www.sqlite.org/" target="_blank">
+    <img src="https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white" alt="SQLite" />
+  </a>
   <a href="https://tailwindcss.com/" target="_blank">
     <img src="https://img.shields.io/badge/Tailwind_CSS_v3-06B6D4?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  </a>
+  <a href="https://openalex.org/" target="_blank">
+    <img src="https://img.shields.io/badge/OpenAlex_API-0F766E?style=flat&logoColor=white" alt="OpenAlex API" />
   </a>
   <a href="https://developer.mozilla.org/docs/Web/HTML" target="_blank">
     <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white" alt="HTML5" />
@@ -21,11 +30,29 @@
   </a>
 </p>
 
-**ISourceKO** is a centralized study and research aggregator designed specifically for university and collegiate students. Instead of searching multiple tabs separately, students enter a topic once and receive consolidated, high-yield results from diverse academic and educational platforms—including **YouTube Video Lectures**, **ScienceDirect Peer-Reviewed Articles**, and **Semantic Scholar Citations**.
+**ISourceKO** is a centralized study and research aggregator designed specifically for university and collegiate students. Instead of searching multiple tabs separately, students enter a topic once and receive consolidated, high-yield results from diverse academic and educational platforms—including **Live OpenAlex Open-Access Works**, **Semantic Scholar Citations**, **ScienceDirect Peer-Reviewed Articles**, and **YouTube Video Lectures**.
 
-In addition, ISourceKO features a dedicated **Peer Exchange Section** (Optional Challenge) where students can upload photos of their own handwritten notes, formula cheat sheets, diagrams, or share direct links to external study resources with real-time upvoting and community feedback.
+In addition, ISourceKO features a SQLite-persisted **Peer Exchange Archive** where students deposit handwritten notes, formula cheat sheets, diagrams, or study links with zoomable darkroom inspection, peer discussion comments, and device-guarded upvoting.
 
 Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/eitophetamine9/ISourceKo)**
+
+---
+
+## Core Capabilities (Increment 2)
+
+- **Live Open-Access Academic Search & Resilient Fallback**:
+  - Queries **OpenAlex** (250M+ scholarly works, open-access PDFs, reconstructed abstracts, DOIs), **Semantic Scholar Graph API**, **YouTube Educational Search / Data API v3**, and **Elsevier ScienceDirect** concurrently via `Task.WhenAll`.
+  - Automatic timeout and rate-limit fallback ensures uninterrupted study sessions.
+- **SQLite Persistence via Entity Framework Core**:
+  - Auto-creates and seeds `isourceko.db` on startup using `IDbContextFactory<AppDbContext>`.
+  - Persists student submissions, peer discussion comments, upvotes, and saved reading list bookmarks across sessions.
+- **In-App YouTube Lecture Theater**:
+  - Plays educational videos inside a distraction-free embedded theater modal (`youtube-nocookie.com`) alongside a locally persisted **Lecture Scratchpad** for timestamps and exam takeaways.
+- **Multi-Style Academic Citation Suite**:
+  - Formats and copies citations in **APA 7th**, **MLA 9th**, **Chicago 17th**, and **BibTeX** (including one-click `.bib` file export for individual sources or an entire saved syllabus).
+- **Zoomable Note Inspector & Upvote Guard**:
+  - Inspect handwritten diagrams at 50%–300% zoom with click-and-drag panning and 90-degree rotation.
+  - Lightweight `localStorage` upvote de-duplication prevents vote inflation while allowing clean upvote toggling.
 
 ---
 
@@ -34,25 +61,20 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 - **Typography**: Editorial two-font pairing:
   - **Display / Headings / Citations**: `Newsreader` (Variable Optical Serif, Google Fonts)
   - **Interface / Metadata / Controls**: `Plus Jakarta Sans` (Geometric Humanist Sans, Google Fonts)
-- **Palette**: Archival Bone (`#FBFBF9`), Deep Oxford Ink (`#0C131F`), Tactile Platform Accents (YouTube Crimson `#DC2626`, ScienceDirect Ochre `#D97706`, Semantic Scholar Slate-Blue `#0284C7`, Student Evergreen `#059669`, Electric Flame `#FF5400`). Strict zero-purple policy.
+- **Palette**: Archival Bone (`#FBFBF9`), Deep Oxford Ink (`#0C131F`), Tactile Platform Accents (YouTube Crimson `#DC2626`, OpenAlex Teal `#0F766E`, ScienceDirect Ochre `#D97706`, Semantic Scholar Slate-Blue `#0284C7`, Student Evergreen `#059669`, Electric Flame `#FF5400`). Strict zero-purple policy.
 - **Dynamic Interactions**:
-  - **Scrolling**: Seamless floating scrollbar, dynamic top reading progress bar, and sticky blur masthead.
-  - **Hovering**: Card physical lift (`-translate-y-1`), image zoom (`img-zoom-frame`), underline draw.
-  - **Clicking**: Tactile button press (`active:scale-[0.96]`), checkmark flash on citation copy, burst animation on upvotes.
-- **Heterogeneous Content Layout**:
-  - **Academic Papers**: High-density citation dossier with DOI link, publication year, and instant citation copy.
-  - **Video Lectures**: 16:9 media-first preview with duration pill, educator verification, and direct watch link.
-  - **Student Notes**: Notebook index-card styling with full-resolution handwritten preview lightbox.
+  - **Scrolling**: Lenis smooth scrolling, GSAP ScrollTrigger staggered masked hero reveals, scroll-velocity kinetic marquee, sticky split-screen telemetry, and top reading progress bar.
+  - **Hovering & Clicking**: Magnetic action buttons, card lift, smooth image zoom, checkmark flash on citation copy, and burst animation on upvotes.
 
 ---
 
 ## Architecture & Tech Stack
 
 - **Framework**: **ASP.NET Core Blazor Web App** (Interactive Server mode).
-  > **Note**: Uses Blazor Web (Server) as the main project instead of Blazor WebAssembly, ensuring fast initial loads, direct server-side data access, secure API key handling, and zero browser WebAssembly overhead.
-- **Styling**: **Tailwind CSS (v3)** + Semantic HTML5.
-- **Language**: **C# 13 / .NET 10** (compatible with .NET 8 LTS).
-- **Package Management**: NuGet (.NET) + npm (Tailwind CSS CLI).
+- **Persistence**: **Entity Framework Core 10** + **SQLite** (`isourceko.db`).
+- **Styling**: **Tailwind CSS (v3)** + Semantic HTML5 (zero Bootstrap).
+- **Motion**: **Lenis** + **GSAP / ScrollTrigger** (GPU-composited properties only).
+- **Language**: **C# 13 / .NET 10**.
 
 ---
 
@@ -60,71 +82,81 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ```text
 ISourceKo/
-├── Components/                         # Blazor UI Layer
-│   ├── App.razor                       # Root HTML shell linking Newsreader & Plus Jakarta Sans
-│   ├── Routes.razor                    # Blazor router and route table
-│   ├── _Imports.razor                  # Global Razor namespace imports
-│   ├── Layout/                         # Layout components
-│   │   ├── MainLayout.razor            # Responsive master layout with sticky masthead & footer
-│   │   └── NavMenu.razor               # Navigation bar with badges, active links, and mobile drawer
-│   ├── Pages/                          # Application pages
-│   │   ├── Home.razor                  # Multi-Platform Search Hub & Aggregator stream
-│   │   ├── Community.razor             # Student Submissions Study Hall (Peer Notes & Links)
-│   │   ├── SubmitSource.razor          # Form for students to deposit notes/diagrams or links
-│   │   ├── Bookmarks.razor             # Student's saved syllabus & bibliography exporter
-│   │   ├── NotFound.razor              # Tailwind styled 404 page
-│   │   └── Error.razor                 # Error boundary handler
-│   └── Shared/                         # Reusable UI components
-│       ├── SearchBar.razor             # Search desk with segmented corpus toggles & trending chips
-│       ├── SourceCard.razor            # Heterogeneous card (Citation dossier for papers, video player for lectures)
-│       ├── StudentSourceCard.razor     # Peer card supporting image zoom preview & upvotes
-│       ├── PlatformBadge.razor         # Tactile platform badge with icons for each corpus
-│       ├── ImageModal.razor            # Darkroom lightbox modal for student handwritten notes
-│       ├── LoadingSkeleton.razor       # Shimmer loading skeleton
-│       └── EmptyState.razor            # Placeholder state for zero search results
+├── Components/                             # Blazor UI Layer
+│   ├── App.razor                           # Root HTML shell linking fonts, motion engine & storage helpers
+│   ├── Routes.razor                        # Blazor router and route table
+│   ├── _Imports.razor                      # Global Razor namespace imports
+│   ├── Layout/                             # Layout components
+│   │   ├── MainLayout.razor                # Responsive master layout with sticky masthead & footer
+│   │   └── NavMenu.razor                   # Navigation bar with persisted bookmark badge & mobile drawer
+│   ├── Pages/                              # Application pages
+│   │   ├── Home.razor                      # Multi-Platform Search Hub, Video Theater & Citation Suite
+│   │   ├── Community.razor                 # Student Submissions Study Hall (Peer Notes & Discussions)
+│   │   ├── SubmitSource.razor              # Form for students to deposit notes/diagrams or links
+│   │   ├── Bookmarks.razor                 # SQLite-persisted syllabus & multi-format bibliography exporter
+│   │   ├── NotFound.razor                  # Tailwind styled 404 page
+│   │   └── Error.razor                     # Error boundary handler
+│   └── Shared/                             # Reusable UI components
+│       ├── SearchBar.razor                 # Search desk with segmented corpus toggles & trending chips
+│       ├── SourceCard.razor                # Heterogeneous card (Academic dossier + Video theater trigger)
+│       ├── StudentSourceCard.razor         # Peer card with zoom preview, comments thread & upvote guard
+│       ├── VideoPlayerModal.razor          # Distraction-free YouTube theater modal with lecture scratchpad
+│       ├── CitationModal.razor             # APA 7th / MLA 9th / Chicago 17th / BibTeX generator & .bib export
+│       ├── ImageModal.razor                # Zoomable, pannable & rotatable note darkroom inspector
+│       ├── PlatformBadge.razor             # Tactile platform badge for each corpus
+│       ├── LoadingSkeleton.razor           # Shimmer loading skeleton
+│       └── EmptyState.razor                # Placeholder state for zero search results
 │
-├── Models/                             # Domain Entities & DTOs
+├── Data/                                   # Persistence Layer (EF Core + SQLite)
+│   ├── Entities/
+│   │   ├── StudentSubmissionEntity.cs      # Student note & link table entity
+│   │   ├── StudentCommentEntity.cs         # Peer discussion comments entity
+│   │   └── BookmarkEntity.cs               # Saved study syllabus entity
+│   ├── AppDbContext.cs                     # Entity Framework Core DbContext & index configurations
+│   └── DatabaseInitializer.cs              # Automatic schema initialization & seed data loader
+│
+├── Models/                                 # Domain Entities & DTOs
 │   ├── Enums/
-│   │   ├── SourcePlatform.cs           # YouTube, ScienceDirect, SemanticScholar, Community
-│   │   ├── SubmissionType.cs           # Link, ImageNote, Document
-│   │   └── AcademicField.cs            # CS, Medicine, Engineering, Natural Sciences, etc.
-│   ├── SourceItem.cs                   # Normalized entity representing a source across platforms
-│   ├── StudentSubmission.cs            # Entity for student-submitted notes/photos/links & comments
-│   ├── SearchQuery.cs                  # Search filter criteria (query, platform, field, sort)
-│   └── SearchResponse.cs               # Search result envelope with metrics and metadata
+│   │   ├── SourcePlatform.cs               # YouTube, OpenAlex, ScienceDirect, SemanticScholar, Community
+│   │   ├── SubmissionType.cs               # Link, ImageNote, Document
+│   │   └── AcademicField.cs                # CS, Medicine, Engineering, Natural Sciences, etc.
+│   ├── SourceItem.cs                       # Normalized entity representing a source across platforms
+│   ├── StudentSubmission.cs                # Student-submitted notes/photos/links & comments model
+│   ├── SearchQuery.cs                      # Search filter criteria (query, platform, field, sort)
+│   └── SearchResponse.cs                   # Search result envelope with metrics and metadata
 │
-├── Services/                           # Business Logic & External Data Integration
+├── Services/                               # Business Logic & External Data Integration
 │   ├── Interfaces/
-│   │   ├── ISourceAggregatorService.cs # Multi-provider concurrent query coordinator
-│   │   ├── ISourceProvider.cs          # Extensible provider contract
-│   │   ├── IStudentSubmissionService.cs# Student notes & links CRUD with upvotes
-│   │   ├── IFileStorageService.cs      # Handling uploaded pictures of study notes
-│   │   └── IBookmarkService.cs         # Managing student saved items
+│   │   ├── ISourceAggregatorService.cs     # Multi-provider concurrent query coordinator
+│   │   ├── ISourceProvider.cs              # Extensible provider contract
+│   │   ├── IStudentSubmissionService.cs    # SQLite-backed student notes, upvotes & comments service
+│   │   ├── IFileStorageService.cs          # Handling uploaded pictures of study notes
+│   │   └── IBookmarkService.cs             # SQLite-backed study bookmarks service
 │   ├── Providers/
-│   │   ├── YouTubeSourceProvider.cs    # Video tutorials & lecture playlists provider
-│   │   ├── ScienceDirectSourceProvider.cs # Elsevier peer-reviewed journal papers provider
-│   │   ├── SemanticScholarSourceProvider.cs # Open-access academic citations provider
-│   │   └── CommunitySourceProvider.cs  # Searches within peer-uploaded study notes
-│   ├── SourceAggregatorService.cs      # Executes all providers concurrently via Task.WhenAll
-│   ├── StudentSubmissionService.cs     # Manages submissions (with high-yield seed data)
-│   ├── LocalFileStorageService.cs      # Stores student photos in wwwroot/uploads/
-│   └── BookmarkService.cs              # Personal study bookmarks service
+│   │   ├── OpenAlexSourceProvider.cs       # Live OpenAlex open-access scholarly works connector
+│   │   ├── SemanticScholarSourceProvider.cs# Live Semantic Scholar citation graph connector
+│   │   ├── YouTubeSourceProvider.cs        # YouTube Data API v3 & educational video parser
+│   │   ├── ScienceDirectSourceProvider.cs  # Elsevier peer-reviewed journal connector
+│   │   └── CommunitySourceProvider.cs      # Queries SQLite peer-uploaded study notes
+│   ├── CitationFormatter.cs                # Pure formatter for APA 7th, MLA 9th, Chicago 17th & BibTeX
+│   ├── SourceAggregatorService.cs          # Concurrent fan-out & balanced provider interleaving
+│   ├── StudentSubmissionService.cs         # EF Core SQLite repository for student archive
+│   ├── LocalFileStorageService.cs          # Stores student photos in wwwroot/uploads/
+│   └── BookmarkService.cs                  # Write-through cached SQLite bookmark service
 │
-├── Styles/                             # CSS Source Directory
-│   └── tailwind.css                    # Tailwind base directives & micro-interaction components
+├── Styles/                                 # CSS Source Directory
+│   └── tailwind.css                        # Tailwind base directives & micro-interaction components
 │
-├── wwwroot/                            # Static Web Assets
-│   ├── css/
-│   │   └── tailwind.min.css            # Minified compiled Tailwind CSS bundle
-│   └── uploads/
-│       └── student-submissions/        # Storage folder for student-uploaded note photos
+├── wwwroot/                                # Static Web Assets
+│   ├── css/tailwind.min.css                # Minified compiled Tailwind CSS bundle
+│   ├── js/                                 # Lenis, GSAP, animations & localStorage helpers
+│   └── uploads/student-submissions/        # Storage folder for student-uploaded note photos
 │
-├── appsettings.json                    # Configuration for API keys and file upload quotas
-├── package.json                        # Node dependencies (tailwindcss, postcss, autoprefixer)
-├── tailwind.config.js                  # Tailwind configuration matching Razor files
-├── postcss.config.js                   # PostCSS plugins
-├── Program.cs                          # ASP.NET Core DI container and request pipeline
-└── ISourceKO.csproj                    # .NET project specification
+├── appsettings.json                        # Connection string, API keys & file upload quotas
+├── package.json                            # Node dependencies (tailwindcss, postcss, autoprefixer)
+├── tailwind.config.js                      # Tailwind configuration matching Razor files
+├── Program.cs                              # ASP.NET Core DI container, SQLite init & pipeline
+└── ISourceKO.csproj                        # .NET project specification
 ```
 
 ---
@@ -132,7 +164,7 @@ ISourceKo/
 ## Getting Started
 
 ### 1. Prerequisites
-- [.NET SDK](https://dotnet.microsoft.com/download) (Version 8.0, 9.0, or 10.0)
+- [.NET SDK](https://dotnet.microsoft.com/download) (Version 10.0)
 - [Node.js](https://nodejs.org/) (Version 18+)
 
 ### 2. Compile Tailwind CSS
@@ -149,4 +181,4 @@ npm run watch:css
 ```bash
 dotnet run --launch-profile http
 ```
-Then navigate to **`http://localhost:5000`** in your browser.
+On first launch, ISourceKO automatically initializes `isourceko.db` with seeded study notes. Navigate to **`http://localhost:5000`** in your browser.

@@ -228,16 +228,10 @@ public class OpenAlexSourceProvider : ISourceProvider
                   .Trim();
     }
 
-    private static string FormatFieldKeyword(AcademicField field) => field switch
-    {
-        AcademicField.ComputerScience => "computer science",
-        AcademicField.NaturalSciences => "science",
-        AcademicField.MedicineAndHealth => "medicine",
-        AcademicField.BusinessAndEconomics => "economics",
-        AcademicField.SocialSciences => "social sciences",
-        AcademicField.ArtsAndHumanities => "humanities",
-        _ => field.ToString().ToLowerInvariant()
-    };
+    private static string FormatFieldKeyword(AcademicField field) =>
+        field == AcademicField.General
+            ? string.Empty
+            : field.GetDisplayName().Replace("&", "").ToLowerInvariant();
 
     private static List<SourceItem> GenerateFallbackResults(string cleanQuery, AcademicField field)
     {

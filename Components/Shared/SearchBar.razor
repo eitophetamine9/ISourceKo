@@ -25,17 +25,14 @@
             }
         </div>
 
-        <!-- Academic Discipline Selector -->
-        <div class="relative min-w-[180px]">
+        <!-- Subject Selector -->
+        <div class="relative min-w-[200px]">
             <select @bind="Query.Field" class="w-full py-3 px-3 bg-bone border border-oxford-200 rounded text-oxford-800 text-sm focus:outline-none focus:ring-2 focus:ring-oxford-950 cursor-pointer transition-all">
-                <option value="@AcademicField.General">All Disciplines</option>
-                <option value="@AcademicField.ComputerScience">Computer Science</option>
-                <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
-                <option value="@AcademicField.Mathematics">Mathematics</option>
-                <option value="@AcademicField.Engineering">Engineering</option>
-                <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
-                <option value="@AcademicField.SocialSciences">Social Sciences</option>
-                <option value="@AcademicField.BusinessAndEconomics">Business & Economics</option>
+                <option value="@AcademicField.General">All Subjects</option>
+                @foreach (var subject in AcademicFieldExtensions.AllSubjects)
+                {
+                    <option value="@subject">@subject.GetDisplayName()</option>
+                }
             </select>
         </div>
 

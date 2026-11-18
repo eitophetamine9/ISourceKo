@@ -97,18 +97,16 @@
                 </div>
             }
 
-            <!-- Discipline & Details -->
+            <!-- Subject & Details -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                 <div>
-                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Academic Discipline</label>
+                    <label class="block text-xs font-semibold text-oxford-800 mb-1">Subject</label>
                     <InputSelect @bind-Value="model.Field" class="w-full px-3 py-2 bg-bone border border-oxford-200 rounded text-xs text-oxford-800 focus:outline-none focus:ring-2 focus:ring-oxford-950 cursor-pointer">
-                        <option value="@AcademicField.ComputerScience">Computer Science</option>
-                        <option value="@AcademicField.NaturalSciences">Natural Sciences</option>
-                        <option value="@AcademicField.Mathematics">Mathematics</option>
-                        <option value="@AcademicField.Engineering">Engineering</option>
-                        <option value="@AcademicField.MedicineAndHealth">Medicine & Health</option>
-                        <option value="@AcademicField.SocialSciences">Social Sciences</option>
-                        <option value="@AcademicField.BusinessAndEconomics">Business & Economics</option>
+                        @foreach (var subject in AcademicFieldExtensions.AllSubjects)
+                        {
+                            <option value="@subject">@subject.GetDisplayName()</option>
+                        }
+                        <option value="@AcademicField.General">@AcademicField.General.GetDisplayName()</option>
                     </InputSelect>
                 </div>
 

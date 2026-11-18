@@ -156,7 +156,7 @@ else
                     @if (Item.Field != AcademicField.General)
                     {
                         <span class="text-[11px] px-2 py-0.5 bg-oxford-50 text-oxford-600 rounded border border-oxford-200 font-medium">
-                            @Item.Field.ToString()
+                            @Item.Field.GetDisplayName()
                         </span>
                     }
 

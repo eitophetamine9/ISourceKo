@@ -49,8 +49,9 @@
                 <!-- Embedded Distraction-Free Player -->
                 <div class="@(showNotes ? "lg:col-span-8" : "w-full") flex flex-col justify-center bg-black">
                     <div class="relative w-full aspect-video bg-oxford-950">
-                        <iframe class="w-full h-full border-0"
-                                src="https://www.youtube-nocookie.com/embed/@VideoId?rel=0&modestbranding=1"
+                        <iframe id="lecture-youtube-iframe"
+                                class="w-full h-full border-0"
+                                src="https://www.youtube-nocookie.com/embed/@VideoId?rel=0&modestbranding=1&enablejsapi=1"
                                 title="@Item.Title"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                 referrerpolicy="strict-origin-when-cross-origin"
@@ -72,9 +73,13 @@
                                     Saved locally
                                 </span>
                             </div>
-                            <p class="text-[11px] text-oxford-400 mb-3 leading-relaxed">
-                                Jot timestamps, key definitions, or exam questions while watching. Notes stay saved on this device for this lecture.
+                            <p class="text-[11px] text-oxford-400 mb-2 leading-relaxed">
+                                Jot timestamps, key definitions, or exam questions. Click any detected timestamp to jump the video directly.
                             </p>
+
+                            <!-- Interactive Click-to-Jump Timestamp Chips -->
+                            <div @ref="timestampsElement" id="scratchpad-timestamps" class="flex flex-wrap items-center gap-1.5 mb-2.5 min-h-[22px] hidden"></div>
+
                             <textarea @ref="notesTextarea"
                                       id="lecture-scratchpad-input"
                                       placeholder="e.g.&#10;04:15 - Core intuition & proof sketch&#10;11:30 - Edge case to verify for midterm..."
@@ -82,7 +87,16 @@
                         </div>
 
                         <div class="mt-3 pt-3 border-t border-oxford-800 flex items-center justify-between text-[11px]">
-                            <span @ref="counterElement" id="scratchpad-counter" class="text-oxford-400">0 chars</span>
+                            <div class="flex items-center gap-2">
+                                <span @ref="counterElement" id="scratchpad-counter" class="text-oxford-400">0 chars</span>
+                                <button type="button"
+                                        @onclick="InsertTimestampTemplate"
+                                        title="Insert timestamp line into notes"
+                                        class="btn-press inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-oxford-950 hover:bg-oxford-800 text-oxford-300 hover:text-bone font-mono text-[10px] border border-oxford-800 transition-colors">
+                                    <span>+ Stamp</span>
+                                </button>
+                            </div>
+
                             <button type="button"
                                     @onclick="CopyNotes"
                                     class="btn-press inline-flex items-center gap-1 px-2.5 py-1 rounded bg-oxford-800 hover:bg-oxford-700 text-bone font-semibold transition-colors">
@@ -154,6 +168,7 @@
     private ElementReference notesTextarea;
     private ElementReference statusElement;
     private ElementReference counterElement;
+    private ElementReference timestampsElement;
     private string? attachedVideoId;
     private bool shouldReattach = false;
 
@@ -179,7 +194,7 @@
         {
             try
             {
-                await JS.InvokeVoidAsync("isourcekoStorage.initScratchpad", notesTextarea, VideoId, statusElement, counterElement);
+                await JS.InvokeVoidAsync("isourcekoStorage.initScratchpad", notesTextarea, VideoId, statusElement, counterElement, timestampsElement);
                 attachedVideoId = VideoId;
                 shouldReattach = false;
             }
@@ -189,6 +204,15 @@
         {
             attachedVideoId = null;
         }
+    }
+
+    private async Task InsertTimestampTemplate()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.insertTimestamp", notesTextarea, "\n01:30 - ");
+        }
+        catch { }
     }
 
     private void ToggleNotes()

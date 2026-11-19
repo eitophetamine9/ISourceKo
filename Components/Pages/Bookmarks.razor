@@ -78,6 +78,7 @@
                 {
                     <SourceCard Item="item"
                                 OnWatchVideo="OpenVideoModal"
+                                OnReadPdf="OpenPdfModal"
                                 OnOpenCitation="OpenCitationModal" />
                 }
             </div>
@@ -109,6 +110,11 @@
                   OnClose="CloseVideoModal"
                   OnOpenCitation="OpenCitationModal" />
 
+<!-- In-App Distraction-Free PDF Reader Modal -->
+<PdfViewerModal Item="@activePdfItem"
+                OnClose="ClosePdfModal"
+                OnOpenCitation="OpenCitationModal" />
+
 <!-- Multi-Style Academic Citation Modal -->
 <CitationModal Item="@activeCitationItem"
                OnClose="CloseCitationModal" />
@@ -118,6 +124,7 @@
     private CitationStyle exportStyle = CitationStyle.Apa7;
     private bool isAllCopied = false;
     private SourceItem? activeVideoItem;
+    private SourceItem? activePdfItem;
     private SourceItem? activeCitationItem;
 
     protected override void OnInitialized()
@@ -180,6 +187,8 @@
 
     private void OpenVideoModal(SourceItem item) => activeVideoItem = item;
     private void CloseVideoModal() => activeVideoItem = null;
+    private void OpenPdfModal(SourceItem item) => activePdfItem = item;
+    private void ClosePdfModal() => activePdfItem = null;
     private void OpenCitationModal(SourceItem item) => activeCitationItem = item;
     private void CloseCitationModal() => activeCitationItem = null;
 

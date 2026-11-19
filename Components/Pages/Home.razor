@@ -101,6 +101,38 @@
                                     OnOpenCitation="OpenCitationModal" />
                     }
                 </div>
+
+                @if (response.HasMore)
+                {
+                    <div class="mt-10 mb-6 flex flex-col items-center justify-center gap-2">
+                        <button type="button"
+                                @onclick="LoadMoreSources"
+                                disabled="@isLoadingMore"
+                                class="btn-press inline-flex items-center gap-2.5 px-6 py-3 rounded-lg bg-white hover:bg-oxford-50 text-oxford-900 border border-oxford-300 hover:border-oxford-500 font-semibold text-xs shadow-subtle hover:shadow-pop transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                            @if (isLoadingMore)
+                            {
+                                <span class="w-3.5 h-3.5 border-2 border-oxford-400 border-t-flame rounded-full animate-spin"></span>
+                                <span>Retrieving more sources...</span>
+                            }
+                            else
+                            {
+                                <svg class="w-4 h-4 text-flame" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                                <span>Load More Sources (Showing @response.TotalResults)</span>
+                            }
+                        </button>
+                        <span class="text-[11px] font-mono text-oxford-500">
+                            Page @currentPage loaded • OpenAlex, Semantic Scholar, YouTube & ScienceDirect
+                        </span>
+                    </div>
+                }
+                else if (response.Items.Count > 0)
+                {
+                    <div class="mt-8 text-center text-[11px] font-mono text-oxford-500">
+                        • End of indexed scholarly results for this query •
+                    </div>
+                }
             }
             else
             {
@@ -227,9 +259,12 @@
 
 @code {
     private SearchQuery searchQuery = new();
+    private SearchQuery? currentQuery;
     private SearchResponse? response;
     private List<string> trendingTopics = new();
     private bool isLoading = false;
+    private bool isLoadingMore = false;
+    private int currentPage = 1;
     private SourceItem? activeVideoItem;
     private SourceItem? activeCitationItem;
 
@@ -257,19 +292,69 @@
         if (string.IsNullOrWhiteSpace(query.QueryText))
         {
             response = null;
+            currentQuery = null;
             return;
         }
 
         isLoading = true;
+        currentPage = 1;
+        currentQuery = new SearchQuery
+        {
+            QueryText = query.QueryText,
+            Field = query.Field,
+            Platform = query.Platform,
+            SortBy = query.SortBy,
+            PageNumber = 1
+        };
         StateHasChanged();
 
         try
         {
-            response = await AggregatorService.AggregateSearchAsync(query);
+            response = await AggregatorService.AggregateSearchAsync(currentQuery);
         }
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task LoadMoreSources()
+    {
+        if (isLoadingMore || currentQuery == null || response == null) return;
+        isLoadingMore = true;
+        StateHasChanged();
+
+        try
+        {
+            currentPage++;
+            currentQuery.PageNumber = currentPage;
+            var next = await AggregatorService.AggregateSearchAsync(currentQuery);
+            if (next.Items.Count > 0)
+            {
+                var existingIds = response.Items.Select(x => x.Id).ToHashSet();
+                var newItems = next.Items.Where(x => !existingIds.Contains(x.Id)).ToList();
+                response.Items.AddRange(newItems);
+
+                foreach (var kvp in next.CountByPlatform)
+                {
+                    response.CountByPlatform[kvp.Key] = response.CountByPlatform.GetValueOrDefault(kvp.Key) + kvp.Value;
+                }
+
+                response.HasMore = newItems.Count > 0 && next.HasMore;
+            }
+            else
+            {
+                response.HasMore = false;
+            }
+        }
+        catch
+        {
+            response.HasMore = false;
+        }
+        finally
+        {
+            isLoadingMore = false;
+            StateHasChanged();
         }
     }
 

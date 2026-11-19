@@ -7,5 +7,5 @@ public interface ISourceProvider
 {
     SourcePlatform Platform { get; }
     string DisplayName { get; }
-    Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, CancellationToken ct = default);
+    Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, int page = 1, CancellationToken ct = default);
 }

@@ -25,7 +25,7 @@ public class OpenAlexSourceProvider : ISourceProvider
         _logger = logger;
     }
 
-    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, CancellationToken ct = default)
+    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, int page = 1, CancellationToken ct = default)
     {
         var cleanQuery = query.Trim();
         if (string.IsNullOrWhiteSpace(cleanQuery))
@@ -43,7 +43,7 @@ public class OpenAlexSourceProvider : ISourceProvider
                 ? $"{cleanQuery} {FormatFieldKeyword(field)}"
                 : cleanQuery;
 
-            var url = $"https://api.openalex.org/works?search={Uri.EscapeDataString(searchTerm)}&per-page=6&sort=relevance_score:desc";
+            var url = $"https://api.openalex.org/works?search={Uri.EscapeDataString(searchTerm)}&page={page}&per-page=8&sort=relevance_score:desc";
 
             using var response = await client.GetAsync(url, timeoutCts.Token);
             if (response.IsSuccessStatusCode)
@@ -58,7 +58,7 @@ public class OpenAlexSourceProvider : ISourceProvider
 
                     if (liveItems.Count > 0)
                     {
-                        _logger.LogInformation("OpenAlex live API returned {Count} works for '{Query}'", liveItems.Count, cleanQuery);
+                        _logger.LogInformation("OpenAlex live API returned {Count} works for '{Query}' (page {Page})", liveItems.Count, cleanQuery, page);
                         return liveItems;
                     }
                 }
@@ -77,7 +77,7 @@ public class OpenAlexSourceProvider : ISourceProvider
             _logger.LogWarning(ex, "OpenAlex API call failed for '{Query}', switching to fallback index.", cleanQuery);
         }
 
-        return GenerateFallbackResults(cleanQuery, field);
+        return page <= 1 ? GenerateFallbackResults(cleanQuery, field) : new List<SourceItem>();
     }
 
     private static SourceItem MapWorkToSourceItem(OpenAlexWork work, AcademicField field)

@@ -27,7 +27,7 @@ public class ScienceDirectSourceProvider : ISourceProvider
         _logger = logger;
     }
 
-    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, CancellationToken ct = default)
+    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, int page = 1, CancellationToken ct = default)
     {
         var cleanQuery = query.Trim();
         if (string.IsNullOrWhiteSpace(cleanQuery))
@@ -44,7 +44,8 @@ public class ScienceDirectSourceProvider : ISourceProvider
                 timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
 
                 var client = _httpClientFactory.CreateClient("Elsevier");
-                var url = $"https://api.elsevier.com/content/search/sciencedirect?query={Uri.EscapeDataString(cleanQuery)}&count=5";
+                var offset = Math.Max(0, (page - 1) * 6);
+                var url = $"https://api.elsevier.com/content/search/sciencedirect?query={Uri.EscapeDataString(cleanQuery)}&start={offset}&count=6";
 
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Add("X-ELS-APIKey", apiKey);
@@ -75,7 +76,7 @@ public class ScienceDirectSourceProvider : ISourceProvider
             }
         }
 
-        return GenerateAcademicArticles(cleanQuery, field);
+        return page <= 1 ? GenerateAcademicArticles(cleanQuery, field) : new List<SourceItem>();
     }
 
     private static SourceItem MapEntry(ElsevierEntry entry, string query, AcademicField field)

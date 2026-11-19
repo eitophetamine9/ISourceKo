@@ -10,4 +10,6 @@ public class SearchResponse
     public Dictionary<SourcePlatform, int> CountByPlatform { get; set; } = new();
     public TimeSpan ElapsedTime { get; set; }
     public List<string> SuggestedTopics { get; set; } = new();
+    public bool HasMore { get; set; } = true;
+    public int CurrentPage { get; set; } = 1;
 }

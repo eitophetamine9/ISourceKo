@@ -31,7 +31,7 @@ public class YouTubeSourceProvider : ISourceProvider
         _logger = logger;
     }
 
-    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, CancellationToken ct = default)
+    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, int page = 1, CancellationToken ct = default)
     {
         var cleanQuery = query.Trim();
         if (string.IsNullOrWhiteSpace(cleanQuery))
@@ -43,7 +43,7 @@ public class YouTubeSourceProvider : ISourceProvider
         var apiKey = _config["ApiKeys:YouTube"];
         if (!string.IsNullOrWhiteSpace(apiKey))
         {
-            var apiResults = await TrySearchViaDataApiAsync(cleanQuery, field, apiKey, ct);
+            var apiResults = await TrySearchViaDataApiAsync(cleanQuery, field, apiKey, page, ct);
             if (apiResults.Count > 0)
             {
                 return apiResults;
@@ -51,17 +51,17 @@ public class YouTubeSourceProvider : ISourceProvider
         }
 
         // 2. Live no-key YouTube educational query parser (extracts real embeddable VideoIds)
-        var parsedResults = await TrySearchViaPublicQueryAsync(cleanQuery, field, ct);
+        var parsedResults = await TrySearchViaPublicQueryAsync(cleanQuery, field, page, ct);
         if (parsedResults.Count > 0)
         {
             return parsedResults;
         }
 
         // 3. Resilient fallback with verified embeddable educational lectures
-        return GenerateCuratedFallback(cleanQuery, field);
+        return page <= 1 ? GenerateCuratedFallback(cleanQuery, field) : new List<SourceItem>();
     }
 
-    private async Task<List<SourceItem>> TrySearchViaDataApiAsync(string query, AcademicField field, string apiKey, CancellationToken ct)
+    private async Task<List<SourceItem>> TrySearchViaDataApiAsync(string query, AcademicField field, string apiKey, int page, CancellationToken ct)
     {
         try
         {
@@ -70,7 +70,7 @@ public class YouTubeSourceProvider : ISourceProvider
 
             var client = _httpClientFactory.CreateClient("YouTube");
             var encodedQuery = Uri.EscapeDataString($"{query} lecture tutorial");
-            var url = $"https://www.googleapis.com/youtube/v3/search?part=snippet&q={encodedQuery}&type=video&videoCategoryId=27&maxResults=6&key={apiKey}";
+            var url = $"https://www.googleapis.com/youtube/v3/search?part=snippet&q={encodedQuery}&type=video&videoCategoryId=27&maxResults=25&key={apiKey}";
 
             using var response = await client.GetAsync(url, timeoutCts.Token);
             if (!response.IsSuccessStatusCode) return new List<SourceItem>();
@@ -109,7 +109,7 @@ public class YouTubeSourceProvider : ISourceProvider
                 });
             }
 
-            return results;
+            return results.Skip(Math.Max(0, (page - 1) * 6)).Take(6).ToList();
         }
         catch (Exception ex)
         {
@@ -118,7 +118,7 @@ public class YouTubeSourceProvider : ISourceProvider
         }
     }
 
-    private async Task<List<SourceItem>> TrySearchViaPublicQueryAsync(string query, AcademicField field, CancellationToken ct)
+    private async Task<List<SourceItem>> TrySearchViaPublicQueryAsync(string query, AcademicField field, int page, CancellationToken ct)
     {
         try
         {
@@ -141,14 +141,16 @@ public class YouTubeSourceProvider : ISourceProvider
 
             using var doc = JsonDocument.Parse(match.Groups[1].Value);
             var videos = new List<SourceItem>();
-            ExtractVideoRenderers(doc.RootElement, videos, query, field, maxCount: 6);
+            ExtractVideoRenderers(doc.RootElement, videos, query, field, maxCount: 30);
 
-            if (videos.Count > 0)
+            var paged = videos.Skip(Math.Max(0, (page - 1) * 6)).Take(6).ToList();
+
+            if (paged.Count > 0)
             {
-                _logger.LogInformation("YouTube public query parser returned {Count} videos for '{Query}'", videos.Count, query);
+                _logger.LogInformation("YouTube public query parser returned {Count} videos for '{Query}' (page {Page})", paged.Count, query, page);
             }
 
-            return videos;
+            return paged;
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {

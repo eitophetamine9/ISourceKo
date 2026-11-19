@@ -38,7 +38,8 @@ public class SourceAggregatorService : ISourceAggregatorService
         var sw = Stopwatch.StartNew();
         var response = new SearchResponse
         {
-            Query = query.QueryText
+            Query = query.QueryText,
+            CurrentPage = query.PageNumber
         };
 
         if (string.IsNullOrWhiteSpace(query.QueryText))
@@ -51,13 +52,13 @@ public class SourceAggregatorService : ISourceAggregatorService
             query.Platform == SourcePlatform.All || p.Platform == query.Platform
         ).ToList();
 
-        _logger.LogInformation("Querying {Count} providers in parallel for '{Query}'", targetProviders.Count, query.QueryText);
+        _logger.LogInformation("Querying {Count} providers in parallel for '{Query}' (page {Page})", targetProviders.Count, query.QueryText, query.PageNumber);
 
         var tasks = targetProviders.Select(async provider =>
         {
             try
             {
-                var items = await provider.SearchAsync(query.QueryText, query.Field, ct);
+                var items = await provider.SearchAsync(query.QueryText, query.Field, query.PageNumber, ct);
                 return (provider.Platform, items);
             }
             catch (Exception ex)
@@ -91,6 +92,8 @@ public class SourceAggregatorService : ISourceAggregatorService
             "platform" => aggregatedItems.OrderBy(x => x.Platform).ToList(),
             _ => aggregatedItems
         };
+
+        response.HasMore = aggregatedItems.Count >= 4;
 
         sw.Stop();
         response.ElapsedTime = sw.Elapsed;

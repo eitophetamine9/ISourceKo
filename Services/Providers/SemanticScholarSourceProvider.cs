@@ -27,7 +27,7 @@ public class SemanticScholarSourceProvider : ISourceProvider
         _logger = logger;
     }
 
-    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, CancellationToken ct = default)
+    public async Task<List<SourceItem>> SearchAsync(string query, AcademicField field = AcademicField.General, int page = 1, CancellationToken ct = default)
     {
         var cleanQuery = query.Trim();
         if (string.IsNullOrWhiteSpace(cleanQuery))
@@ -42,7 +42,8 @@ public class SemanticScholarSourceProvider : ISourceProvider
 
             var client = _httpClientFactory.CreateClient("SemanticScholar");
             var fields = "paperId,title,abstract,year,authors,venue,citationCount,influentialCitationCount,url,openAccessPdf,externalIds";
-            var url = $"https://api.semanticscholar.org/graph/v1/paper/search?query={Uri.EscapeDataString(cleanQuery)}&limit=5&fields={fields}";
+            var offset = Math.Max(0, (page - 1) * 8);
+            var url = $"https://api.semanticscholar.org/graph/v1/paper/search?query={Uri.EscapeDataString(cleanQuery)}&offset={offset}&limit=8&fields={fields}";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             var apiKey = _config["ApiKeys:SemanticScholar"];
@@ -64,7 +65,7 @@ public class SemanticScholarSourceProvider : ISourceProvider
 
                     if (items.Count > 0)
                     {
-                        _logger.LogInformation("Semantic Scholar live API returned {Count} papers for '{Query}'", items.Count, cleanQuery);
+                        _logger.LogInformation("Semantic Scholar live API returned {Count} papers for '{Query}' (page {Page})", items.Count, cleanQuery, page);
                         return items;
                     }
                 }
@@ -83,7 +84,7 @@ public class SemanticScholarSourceProvider : ISourceProvider
             _logger.LogWarning(ex, "Semantic Scholar API error for '{Query}', falling back.", cleanQuery);
         }
 
-        return GenerateFallbackResults(cleanQuery, field);
+        return page <= 1 ? GenerateFallbackResults(cleanQuery, field) : new List<SourceItem>();
     }
 
     private static SourceItem MapPaperToSourceItem(SemanticPaper paper, AcademicField field, string query)

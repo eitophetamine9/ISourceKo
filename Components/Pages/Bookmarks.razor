@@ -1,5 +1,7 @@
 @page "/bookmarks"
 @rendermode InteractiveServer
+@using System.Text
+@using ISourceKO.Models.Enums
 @using ISourceKO.Services
 @inject IBookmarkService BookmarkService
 @inject IJSRuntime JS
@@ -39,13 +41,13 @@
 
                 <button type="button"
                         @onclick="CopyAllCitations"
-                        class="btn-press inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-oxford-300 text-oxford-900 text-xs font-bold rounded shadow-subtle hover:bg-oxford-50 transition-all">
+                        class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-oxford-300 text-oxford-900 text-xs font-bold rounded shadow-subtle hover:bg-oxford-50 transition-all">
                     @if (isAllCopied)
                     {
                         <svg class="w-3.5 h-3.5 text-evergreen animate-scale-in" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span class="text-evergreen font-bold">Bibliography Copied!</span>
+                        <span class="text-evergreen font-bold">Copied!</span>
                     }
                     else
                     {
@@ -65,7 +67,17 @@
                     </button>
                 }
 
-                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-flame text-white font-mono shadow-subtle">@bookmarks.Count</span>
+                <button type="button"
+                        @onclick="ExportMarkdownStudyGuide"
+                        title="Export complete study guide with citations and lecture notes as Markdown"
+                        class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-flame hover:bg-flame-dark text-white text-xs font-bold rounded shadow-subtle transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>@(isGuideExported ? "Study Guide Exported!" : "Export Study Guide (.md)")</span>
+                </button>
+
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-oxford-950 text-white font-mono shadow-subtle">@bookmarks.Count</span>
             </div>
         }
     </header>
@@ -73,8 +85,37 @@
     <div class="mt-8">
         @if (bookmarks.Any())
         {
+            <!-- Course & Subject Folders Filter Navigation -->
+            @if (subjectGroups.Count > 1)
+            {
+                <div class="mb-6 flex flex-wrap items-center gap-2 pb-3 border-b border-oxford-200 text-xs">
+                    <span class="text-oxford-500 font-semibold uppercase tracking-wider text-[11px] mr-1 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-oxford-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        Subject Folders:
+                    </span>
+
+                    <button type="button"
+                            @onclick="() => SelectFolder(null)"
+                            class="btn-press px-2.5 py-1 rounded text-xs font-semibold transition-all @(selectedField == null ? "bg-oxford-950 text-bone shadow-subtle" : "bg-white text-oxford-700 border border-oxford-200 hover:bg-oxford-50")">
+                        All Saved (@bookmarks.Count)
+                    </button>
+
+                    @foreach (var group in subjectGroups)
+                    {
+                        <button type="button"
+                                @onclick="() => SelectFolder(group.Field)"
+                                class="btn-press px-2.5 py-1 rounded text-xs font-semibold transition-all @(selectedField == group.Field ? "bg-flame text-white shadow-subtle" : "bg-white text-oxford-700 border border-oxford-200 hover:bg-oxford-50")">
+                            <span>@group.Field</span>
+                            <span class="ml-1 font-mono text-[11px] opacity-80">(@group.Count)</span>
+                        </button>
+                    }
+                </div>
+            }
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-                @foreach (var item in bookmarks)
+                @foreach (var item in FilteredBookmarks)
                 {
                     <SourceCard Item="item"
                                 OnWatchVideo="OpenVideoModal"
@@ -123,9 +164,23 @@
     private List<SourceItem> bookmarks = new();
     private CitationStyle exportStyle = CitationStyle.Apa7;
     private bool isAllCopied = false;
+    private bool isGuideExported = false;
+    private AcademicField? selectedField = null;
     private SourceItem? activeVideoItem;
     private SourceItem? activePdfItem;
     private SourceItem? activeCitationItem;
+
+    private IEnumerable<SourceItem> FilteredBookmarks =>
+        selectedField.HasValue
+            ? bookmarks.Where(b => b.Field == selectedField.Value)
+            : bookmarks;
+
+    private List<(AcademicField Field, int Count)> subjectGroups =>
+        bookmarks
+            .GroupBy(b => b.Field)
+            .Select(g => (Field: g.Key, Count: g.Count()))
+            .OrderByDescending(x => x.Count)
+            .ToList();
 
     protected override void OnInitialized()
     {
@@ -159,9 +214,15 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void SelectFolder(AcademicField? field)
+    {
+        selectedField = field;
+    }
+
     private async Task CopyAllCitations()
     {
-        var bibliography = CitationFormatter.FormatAll(bookmarks, exportStyle);
+        var targetList = FilteredBookmarks.ToList();
+        var bibliography = CitationFormatter.FormatAll(targetList, exportStyle);
 
         try
         {
@@ -177,10 +238,89 @@
 
     private async Task DownloadAllBibTeX()
     {
-        var bib = CitationFormatter.FormatAll(bookmarks, CitationStyle.BibTeX);
+        var targetList = FilteredBookmarks.ToList();
+        var bib = CitationFormatter.FormatAll(targetList, CitationStyle.BibTeX);
         try
         {
             await JS.InvokeVoidAsync("isourcekoStorage.downloadTextFile", "isourceko-syllabus.bib", bib);
+        }
+        catch { }
+    }
+
+    private async Task ExportMarkdownStudyGuide()
+    {
+        if (!bookmarks.Any()) return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("# ISourceKO Academic Study Syllabus & Reading Guide");
+        sb.AppendLine($"Generated: {DateTime.Now:MMMM dd, yyyy} | Total Curated Sources: {bookmarks.Count}");
+        sb.AppendLine();
+        sb.AppendLine("> *Exported from ISourceKO — Unified collegiate research engine synthesizing OpenAlex, Semantic Scholar, ScienceDirect, and YouTube.*");
+        sb.AppendLine();
+
+        var groups = bookmarks.GroupBy(b => b.Field).OrderBy(g => g.Key.ToString());
+        foreach (var group in groups)
+        {
+            sb.AppendLine($"## Subject Course: {group.Key}");
+            sb.AppendLine();
+
+            foreach (var item in group)
+            {
+                sb.AppendLine($"### {item.Title}");
+                sb.AppendLine($"- **Authors / Publisher:** {item.AuthorOrPublisher}");
+                if (item.PublishedDate.HasValue)
+                {
+                    sb.AppendLine($"- **Publication Date:** {item.PublishedDate.Value:yyyy-MM-dd}");
+                }
+                sb.AppendLine($"- **Corpus:** {item.Platform} • *{item.MetricsInfo}*");
+                sb.AppendLine($"- **Reference Link:** {item.Url}");
+
+                if (item.Metadata.TryGetValue("PdfUrl", out var pdfUrl) && !string.IsNullOrWhiteSpace(pdfUrl))
+                {
+                    sb.AppendLine($"- **Direct PDF:** {pdfUrl}");
+                }
+
+                var apa = CitationFormatter.Format(item, CitationStyle.Apa7);
+                sb.AppendLine($"- **APA Citation:** {apa}");
+
+                if (!string.IsNullOrWhiteSpace(item.Description))
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"**Abstract / Core Synopsis:**");
+                    sb.AppendLine($"> {item.Description}");
+                }
+
+                if (item.Metadata.TryGetValue("VideoId", out var videoId) && !string.IsNullOrWhiteSpace(videoId))
+                {
+                    try
+                    {
+                        var notes = await JS.InvokeAsync<string>("isourcekoStorage.getVideoNotes", videoId);
+                        if (!string.IsNullOrWhiteSpace(notes))
+                        {
+                            sb.AppendLine();
+                            sb.AppendLine($"**Personal Lecture Scratchpad Notes:**");
+                            sb.AppendLine("```text");
+                            sb.AppendLine(notes.Trim());
+                            sb.AppendLine("```");
+                        }
+                    }
+                    catch { }
+                }
+
+                sb.AppendLine();
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.downloadTextFile", "isourceko-study-syllabus.md", sb.ToString());
+            isGuideExported = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            isGuideExported = false;
+            StateHasChanged();
         }
         catch { }
     }

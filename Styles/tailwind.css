@@ -98,63 +98,225 @@
 }
 
 /* Reading Themes: Editorial Parchment, Warm Sepia, Dark Archive */
-body.theme-sepia {
+:root,
+html,
+body,
+body .min-h-screen {
+  background-color: #FBFBF9;
+  color: #0C131F;
+}
+
+header {
+  background-color: rgba(251, 251, 249, 0.95);
+  border-color: rgba(226, 232, 240, 0.8);
+}
+
+.theme-switcher-pill {
+  background-color: #F1F5F9;
+  border-color: #E2E8F0;
+}
+
+.theme-btn {
+  color: #475569;
+}
+
+.theme-btn:hover {
+  color: #0C131F;
+}
+
+.theme-btn-active {
+  background-color: #FFFFFF !important;
+  color: #0C131F !important;
+}
+
+/* WARM SEPIA THEME */
+html.theme-sepia,
+body.theme-sepia,
+body.theme-sepia .min-h-screen,
+html.theme-sepia .min-h-screen {
   background-color: #F4EFE6 !important;
   color: #261D15 !important;
 }
 
-body.theme-sepia .bg-white {
-  background-color: #FAF6EF !important;
-  border-color: #E2D7C5 !important;
-}
-
-body.theme-sepia .bg-bone {
-  background-color: #EDE5D8 !important;
-}
-
-body.theme-sepia header {
+body.theme-sepia header,
+html.theme-sepia header {
   background-color: rgba(244, 239, 230, 0.95) !important;
   border-color: #DECFC0 !important;
 }
 
-body.theme-dark {
+body.theme-sepia footer,
+html.theme-sepia footer {
+  background-color: #FAF6EF !important;
+  border-color: #DECFC0 !important;
+  color: #6B5B4D !important;
+}
+
+body.theme-sepia .bg-white,
+html.theme-sepia .bg-white {
+  background-color: #FAF6EF !important;
+  border-color: #E2D7C5 !important;
+}
+
+body.theme-sepia .bg-bone,
+html.theme-sepia .bg-bone {
+  background-color: #EDE5D8 !important;
+  border-color: #DBCFBE !important;
+}
+
+body.theme-sepia .theme-switcher-pill,
+html.theme-sepia .theme-switcher-pill {
+  background-color: #E5DCCE !important;
+  border-color: #D3C5B2 !important;
+}
+
+body.theme-sepia .theme-btn,
+html.theme-sepia .theme-btn {
+  color: #6B5B4D !important;
+}
+
+body.theme-sepia .theme-btn-active,
+html.theme-sepia .theme-btn-active {
+  background-color: #EDE5D8 !important;
+  color: #3D2F1D !important;
+}
+
+/* DARK ARCHIVE OLED THEME */
+html.theme-dark,
+body.theme-dark,
+body.theme-dark .min-h-screen,
+html.theme-dark .min-h-screen,
+body.theme-dark main,
+html.theme-dark main {
   background-color: #080D14 !important;
   color: #F0EDE6 !important;
 }
 
-body.theme-dark .bg-white {
+body.theme-dark header,
+html.theme-dark header {
+  background-color: rgba(8, 13, 20, 0.95) !important;
+  border-color: #1A2637 !important;
+}
+
+body.theme-dark footer,
+html.theme-dark footer {
+  background-color: #080D14 !important;
+  border-color: #1A2637 !important;
+  color: #94A3B8 !important;
+}
+
+body.theme-dark .bg-white,
+html.theme-dark .bg-white,
+body.theme-dark article.card-lift,
+html.theme-dark article.card-lift {
   background-color: #0E1624 !important;
   border-color: #1E2B3E !important;
   color: #F0EDE6 !important;
 }
 
-body.theme-dark .text-oxford-950,
-body.theme-dark .text-oxford-900 {
-  color: #F5F3EF !important;
+body.theme-dark .hero-blueprint,
+html.theme-dark .hero-blueprint {
+  background-color: #0E1624 !important;
+  border-color: #1E2B3E !important;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px) !important;
 }
 
-body.theme-dark .text-oxford-700,
-body.theme-dark .text-oxford-600 {
-  color: #C0C8D4 !important;
-}
-
-body.theme-dark .text-oxford-500 {
-  color: #929EB2 !important;
-}
-
-body.theme-dark .border-oxford-200,
-body.theme-dark .border-oxford-100 {
+body.theme-dark section[aria-hidden="true"],
+html.theme-dark section[aria-hidden="true"],
+body.theme-dark .kinetic-marquee-track,
+html.theme-dark .kinetic-marquee-track {
+  background-color: #0B111C !important;
   border-color: #1A2637 !important;
+  color: #94A3B8 !important;
 }
 
 body.theme-dark .bg-bone,
+html.theme-dark .bg-bone,
 body.theme-dark .bg-oxford-50,
-body.theme-dark .bg-oxford-100 {
-  background-color: #121C2B !important;
-  border-color: #1F2E44 !important;
+html.theme-dark .bg-oxford-50,
+body.theme-dark .bg-oxford-100,
+html.theme-dark .bg-oxford-100 {
+  background-color: #131C2D !important;
+  border-color: #1E2D44 !important;
+  color: #F0EDE6 !important;
 }
 
-body.theme-dark header {
-  background-color: rgba(8, 13, 20, 0.95) !important;
+body.theme-dark .theme-switcher-pill,
+html.theme-dark .theme-switcher-pill {
+  background-color: #131C2D !important;
+  border-color: #1E2D44 !important;
+}
+
+body.theme-dark .theme-btn,
+html.theme-dark .theme-btn {
+  color: #94A3B8 !important;
+}
+
+body.theme-dark .theme-btn:hover,
+html.theme-dark .theme-btn:hover {
+  color: #F8FAFC !important;
+}
+
+body.theme-dark .theme-btn-active,
+html.theme-dark .theme-btn-active {
+  background-color: #FF5400 !important;
+  color: #FFFFFF !important;
+}
+
+body.theme-dark .text-oxford-950,
+body.theme-dark .text-oxford-900,
+html.theme-dark .text-oxford-950,
+html.theme-dark .text-oxford-900 {
+  color: #F8FAFC !important;
+}
+
+body.theme-dark .text-oxford-800,
+body.theme-dark .text-oxford-700,
+body.theme-dark .text-oxford-600,
+html.theme-dark .text-oxford-800,
+html.theme-dark .text-oxford-700,
+html.theme-dark .text-oxford-600 {
+  color: #CBD5E1 !important;
+}
+
+body.theme-dark .text-oxford-500,
+body.theme-dark .text-oxford-400,
+html.theme-dark .text-oxford-500,
+html.theme-dark .text-oxford-400 {
+  color: #94A3B8 !important;
+}
+
+body.theme-dark .border-oxford-200,
+body.theme-dark .border-oxford-100,
+html.theme-dark .border-oxford-200,
+html.theme-dark .border-oxford-100 {
+  border-color: #1E2B3E !important;
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea,
+html.theme-dark input,
+html.theme-dark select,
+html.theme-dark textarea {
+  background-color: #131C2D !important;
+  color: #F0EDE6 !important;
+  border-color: #1E2D44 !important;
+}
+
+body.theme-dark input::placeholder,
+body.theme-dark textarea::placeholder,
+html.theme-dark input::placeholder,
+html.theme-dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+body.theme-dark #mobile-nav-drawer,
+html.theme-dark #mobile-nav-drawer {
+  background-color: #080D14 !important;
+  border-color: #1A2637 !important;
+}
+
+body.theme-dark .theme-mobile-row,
+html.theme-dark .theme-mobile-row {
   border-color: #1A2637 !important;
 }

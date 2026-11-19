@@ -25,6 +25,13 @@
                 var theme = localStorage.getItem('isourceko_reading_theme') || 'parchment';
                 if (theme !== 'parchment') {
                     document.documentElement.classList.add('theme-' + theme);
+                    if (document.body) {
+                        document.body.classList.add('theme-' + theme);
+                    } else {
+                        window.addEventListener('DOMContentLoaded', function() {
+                            document.body.classList.add('theme-' + theme);
+                        });
+                    }
                 }
             } catch(e) {}
         })();
@@ -33,7 +40,7 @@
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
-<body class="bg-[#FBFBF9] text-[#0C131F] font-sans antialiased min-h-screen selection:bg-flame/15 selection:text-oxford-950 overflow-x-hidden">
+<body class="font-sans antialiased min-h-screen selection:bg-flame/15 selection:text-oxford-950 overflow-x-hidden transition-colors duration-200">
     <!-- Dynamic Reading Scroll Progress Bar -->
     <div id="reading-progress" class="fixed top-0 left-0 h-[2.5px] bg-gradient-to-r from-flame via-amber-500 to-academic z-50 transition-all duration-75 pointer-events-none" style="width: 0%"></div>
 

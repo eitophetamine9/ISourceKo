@@ -42,21 +42,28 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
-## Core Capabilities (Increment 2)
+## Core Capabilities (v2.0.1)
 
-- **Live Open-Access Academic Search & Resilient Fallback**:
-  - Queries **OpenAlex** (250M+ scholarly works, open-access PDFs, reconstructed abstracts, DOIs), **Semantic Scholar Graph API**, **YouTube Educational Search / Data API v3**, and **Elsevier ScienceDirect** concurrently via `Task.WhenAll`.
-  - Automatic timeout and rate-limit fallback ensures uninterrupted study sessions.
+- **Search Scaling & "Load More Sources" Pagination**:
+  - Scaled OpenAlex, Semantic Scholar, YouTube, and ScienceDirect query quotas with smooth on-demand pagination.
+  - Tactile **"Load More Sources"** action fetches subsequent batches without page reloads or layout shift.
+- **In-App Distraction-Free PDF Reader**:
+  - Embedded PDF reader modal for open-access papers (`open_access.oa_url`, Semantic Scholar OA PDFs) so students never have to jump between browser tabs.
+- **Lecture Scratchpad & Clickable Timestamp Deep-Linking**:
+  - Embedded YouTube Lecture Theater with decoupled, 60fps client-side note taking.
+  - Automatically parses timestamp patterns (e.g., `04:15`, `12:30`) into clickable jump-chips that command the YouTube iframe to seek directly to that second.
+- **Study Syllabus Organization & Markdown Guide Exporter**:
+  - Sort bookmarks into Course / Subject folders (Computer Science, Mathematics, Biology, etc.).
+  - 1-click **"Export Study Guide (.md)"** outputs a publication-grade Markdown revision sheet containing citations, synopses, and student lecture notes ready for Obsidian, Notion, or printing.
+- **3-Way Reading Theme Switcher**:
+  - Seamless zero-flicker toggle between **Parchment** (default light paper), **Warm Sepia** (reduced eye-strain for long study sessions), and **Dark Archive** (OLED pitch black for late-night dorm research).
+- **Search Autocomplete & Recommendation Engine**:
+  - Live query autocomplete suggestions matching academic disciplines, trending topics, and collegiate coursework.
 - **SQLite Persistence via Entity Framework Core**:
   - Auto-creates and seeds `isourceko.db` on startup using `IDbContextFactory<AppDbContext>`.
   - Persists student submissions, peer discussion comments, upvotes, and saved reading list bookmarks across sessions.
-- **In-App YouTube Lecture Theater**:
-  - Plays educational videos inside a distraction-free embedded theater modal (`youtube-nocookie.com`) alongside a locally persisted **Lecture Scratchpad** for timestamps and exam takeaways.
 - **Multi-Style Academic Citation Suite**:
-  - Formats and copies citations in **APA 7th**, **MLA 9th**, **Chicago 17th**, and **BibTeX** (including one-click `.bib` file export for individual sources or an entire saved syllabus).
-- **Zoomable Note Inspector & Upvote Guard**:
-  - Inspect handwritten diagrams at 50%–300% zoom with click-and-drag panning and 90-degree rotation.
-  - Lightweight `localStorage` upvote de-duplication prevents vote inflation while allowing clean upvote toggling.
+  - Formats and copies citations in **APA 7th**, **MLA 9th**, **Chicago 17th**, and **BibTeX** (including one-click `.bib` file export).
 
 ---
 

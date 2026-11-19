@@ -1,6 +1,6 @@
 {
   "name": "isourceko",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "ISourceKO - Student Source Hub with Multi-Platform Aggregation and Peer Submissions",
   "scripts": {
     "build:css": "npx tailwindcss -i ./Styles/tailwind.css -o ./wwwroot/css/tailwind.min.css --minify",

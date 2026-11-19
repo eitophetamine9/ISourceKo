@@ -55,8 +55,29 @@
                 </NavLink>
             </nav>
 
-            <!-- Right Action: Magnetic Pop Button -->
+            <!-- Right Action: Theme Switcher & Magnetic Pop Button -->
             <div class="hidden md:flex items-center gap-3">
+                <div class="inline-flex items-center p-0.5 rounded-lg bg-oxford-100/80 border border-oxford-200 text-xs font-semibold" role="group" aria-label="Reading theme">
+                    <button type="button"
+                            @onclick='() => SetTheme("parchment")'
+                            title="Light Parchment"
+                            class="px-2 py-1 rounded text-[11px] transition-all @(currentTheme == "parchment" ? "bg-white text-oxford-950 shadow-subtle font-bold" : "text-oxford-600 hover:text-oxford-900")">
+                        Parchment
+                    </button>
+                    <button type="button"
+                            @onclick='() => SetTheme("sepia")'
+                            title="Sepia Reading Theme"
+                            class="px-2 py-1 rounded text-[11px] transition-all @(currentTheme == "sepia" ? "bg-[#EDE5D8] text-[#3D2F1D] shadow-subtle font-bold" : "text-oxford-600 hover:text-oxford-900")">
+                        Sepia
+                    </button>
+                    <button type="button"
+                            @onclick='() => SetTheme("dark")'
+                            title="Dark Archive Theme"
+                            class="px-2 py-1 rounded text-[11px] transition-all @(currentTheme == "dark" ? "bg-oxford-950 text-bone shadow-subtle font-bold" : "text-oxford-600 hover:text-oxford-900")">
+                        Dark
+                    </button>
+                </div>
+
                 <a href="submit" class="magnetic-btn btn-flame inline-flex items-center gap-2 px-4 py-2 rounded text-xs tracking-tight shadow-subtle will-change-transform">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -101,6 +122,29 @@
             <NavLink href="bookmarks" class="block px-3 py-2 rounded text-base font-medium text-oxford-800 hover:bg-oxford-100" ActiveClass="!bg-white !text-oxford-950 !font-semibold border border-oxford-200" @onclick="CloseMobileMenu">
                 Saved Sources (@bookmarkCount)
             </NavLink>
+
+            <!-- Mobile Reading Theme Toggle -->
+            <div class="px-3 py-2 flex items-center justify-between border-t border-oxford-200 text-xs">
+                <span class="text-oxford-500 font-semibold">Theme:</span>
+                <div class="inline-flex items-center p-0.5 rounded-lg bg-oxford-100/80 border border-oxford-200 text-xs font-semibold">
+                    <button type="button"
+                            @onclick='() => SetTheme("parchment")'
+                            class="px-2 py-1 rounded text-[11px] @(currentTheme == "parchment" ? "bg-white text-oxford-950 font-bold shadow-subtle" : "text-oxford-600")">
+                        Parchment
+                    </button>
+                    <button type="button"
+                            @onclick='() => SetTheme("sepia")'
+                            class="px-2 py-1 rounded text-[11px] @(currentTheme == "sepia" ? "bg-[#EDE5D8] text-[#3D2F1D] font-bold shadow-subtle" : "text-oxford-600")">
+                        Sepia
+                    </button>
+                    <button type="button"
+                            @onclick='() => SetTheme("dark")'
+                            class="px-2 py-1 rounded text-[11px] @(currentTheme == "dark" ? "bg-oxford-950 text-bone font-bold shadow-subtle" : "text-oxford-600")">
+                        Dark
+                    </button>
+                </div>
+            </div>
+
             <div class="pt-2">
                 <a href="submit" class="btn-flame w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded font-medium text-sm" @onclick="CloseMobileMenu">
                     + Contribute Source
@@ -112,6 +156,7 @@
 
 @code {
     private bool isMobileMenuOpen = false;
+    private string currentTheme = "parchment";
     private int bookmarkCount => BookmarkService.GetBookmarks().Count;
 
     protected override void OnInitialized()
@@ -126,11 +171,23 @@
         {
             try
             {
+                currentTheme = await JS.InvokeAsync<string>("isourcekoStorage.getTheme") ?? "parchment";
+                StateHasChanged();
                 var clientId = await JS.InvokeAsync<string>("isourcekoStorage.getOrCreateClientId");
                 await BookmarkService.InitializeClientAsync(clientId);
             }
             catch { }
         }
+    }
+
+    private async Task SetTheme(string theme)
+    {
+        currentTheme = theme;
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.setTheme", theme);
+        }
+        catch { }
     }
 
     private void HandleBookmarksChanged()

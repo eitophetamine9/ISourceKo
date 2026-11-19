@@ -19,6 +19,16 @@
     
     <link rel="stylesheet" href="css/tailwind.min.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('isourceko_reading_theme') || 'parchment';
+                if (theme !== 'parchment') {
+                    document.documentElement.classList.add('theme-' + theme);
+                }
+            } catch(e) {}
+        })();
+    </script>
     <ImportMap />
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>

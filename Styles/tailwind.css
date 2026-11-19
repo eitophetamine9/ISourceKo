@@ -96,3 +96,65 @@
     background-size: 24px 24px;
   }
 }
+
+/* Reading Themes: Editorial Parchment, Warm Sepia, Dark Archive */
+body.theme-sepia {
+  background-color: #F4EFE6 !important;
+  color: #261D15 !important;
+}
+
+body.theme-sepia .bg-white {
+  background-color: #FAF6EF !important;
+  border-color: #E2D7C5 !important;
+}
+
+body.theme-sepia .bg-bone {
+  background-color: #EDE5D8 !important;
+}
+
+body.theme-sepia header {
+  background-color: rgba(244, 239, 230, 0.95) !important;
+  border-color: #DECFC0 !important;
+}
+
+body.theme-dark {
+  background-color: #080D14 !important;
+  color: #F0EDE6 !important;
+}
+
+body.theme-dark .bg-white {
+  background-color: #0E1624 !important;
+  border-color: #1E2B3E !important;
+  color: #F0EDE6 !important;
+}
+
+body.theme-dark .text-oxford-950,
+body.theme-dark .text-oxford-900 {
+  color: #F5F3EF !important;
+}
+
+body.theme-dark .text-oxford-700,
+body.theme-dark .text-oxford-600 {
+  color: #C0C8D4 !important;
+}
+
+body.theme-dark .text-oxford-500 {
+  color: #929EB2 !important;
+}
+
+body.theme-dark .border-oxford-200,
+body.theme-dark .border-oxford-100 {
+  border-color: #1A2637 !important;
+}
+
+body.theme-dark .bg-bone,
+body.theme-dark .bg-oxford-50,
+body.theme-dark .bg-oxford-100 {
+  background-color: #121C2B !important;
+  border-color: #1F2E44 !important;
+}
+
+body.theme-dark header {
+  background-color: rgba(8, 13, 20, 0.95) !important;
+  border-color: #1A2637 !important;
+}

@@ -36,6 +36,28 @@ window.isourcekoStorage = (function () {
             }
         },
 
+        getTheme: function () {
+            try {
+                return localStorage.getItem('isourceko_reading_theme') || 'parchment';
+            } catch {
+                return 'parchment';
+            }
+        },
+
+        setTheme: function (theme) {
+            try {
+                localStorage.setItem('isourceko_reading_theme', theme);
+            } catch { }
+
+            document.body.classList.remove('theme-parchment', 'theme-sepia', 'theme-dark');
+            document.documentElement.classList.remove('theme-parchment', 'theme-sepia', 'theme-dark');
+            if (theme !== 'parchment') {
+                document.body.classList.add('theme-' + theme);
+                document.documentElement.classList.add('theme-' + theme);
+            }
+            return theme;
+        },
+
         hasUpvoted: function (id) {
             return getUpvotedSet().has(id);
         },

@@ -12,6 +12,8 @@
             </div>
             <input @bind="Query.QueryText"
                    @bind:event="oninput"
+                   @onfocus="ShowSuggestions"
+                   @onblur="HideSuggestionsDelayed"
                    type="text"
                    placeholder="Search academic topics, journal papers, lecture videos, or student study notes..."
                    class="w-full pl-10 pr-9 py-3 bg-bone border border-oxford-200 rounded text-oxford-900 placeholder-oxford-400 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950 focus:border-oxford-950 transition-all" />
@@ -22,6 +24,35 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
+            }
+
+            <!-- Autocomplete Floating Dropdown -->
+            @if (showSuggestions && FilteredSuggestions.Any())
+            {
+                <div class="absolute left-0 right-0 top-full mt-1.5 bg-white border border-oxford-200 rounded-lg shadow-lift z-50 overflow-hidden divide-y divide-oxford-100 animate-scale-in">
+                    <div class="px-3.5 py-1.5 bg-oxford-50 flex items-center justify-between text-[10px] font-mono font-bold text-oxford-500 uppercase tracking-wider">
+                        <span>Suggested Academic Inquiries</span>
+                        <span>Click to search</span>
+                    </div>
+                    <ul class="max-h-60 overflow-y-auto py-1">
+                        @foreach (var suggestion in FilteredSuggestions)
+                        {
+                            <li>
+                                <button type="button"
+                                        @onmousedown="() => SelectSuggestion(suggestion)"
+                                        class="w-full text-left px-3.5 py-2 hover:bg-oxford-50 flex items-center justify-between text-xs text-oxford-800 hover:text-flame transition-colors group/item">
+                                    <span class="flex items-center gap-2 font-medium">
+                                        <svg class="w-3.5 h-3.5 text-oxford-400 group-hover/item:text-flame transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        <span>@suggestion</span>
+                                    </span>
+                                    <span class="text-[10px] font-mono text-oxford-400 uppercase tracking-wider">Topic</span>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                </div>
             }
         </div>
 
@@ -116,8 +147,60 @@
     [Parameter] public List<string>? TrendingTopics { get; set; }
     [Parameter] public EventCallback<SearchQuery> OnSearch { get; set; }
 
+    private bool showSuggestions = false;
+
+    private static readonly List<string> CommonAcademicTopics = new()
+    {
+        "Linear Algebra", "Machine Learning", "Quantum Mechanics", "Organic Chemistry",
+        "Cellular Biology", "Macroeconomics", "Data Structures", "Differential Equations",
+        "Neuroscience", "World History", "Cognitive Psychology", "Thermodynamics",
+        "Microbiology", "Microeconomics", "Calculus III", "Fluid Dynamics",
+        "Artificial Intelligence", "Biochemistry", "Philosophy of Mind", "Genetics"
+    };
+
+    private IEnumerable<string> FilteredSuggestions
+    {
+        get
+        {
+            var text = Query.QueryText?.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return (TrendingTopics ?? Enumerable.Empty<string>()).Take(6);
+            }
+
+            var matching = CommonAcademicTopics
+                .Concat(TrendingTopics ?? Enumerable.Empty<string>())
+                .Distinct()
+                .Where(t => t.Contains(text, StringComparison.OrdinalIgnoreCase) && !t.Equals(text, StringComparison.OrdinalIgnoreCase))
+                .Take(6)
+                .ToList();
+
+            return matching;
+        }
+    }
+
+    private void ShowSuggestions()
+    {
+        showSuggestions = true;
+    }
+
+    private async Task HideSuggestionsDelayed()
+    {
+        await Task.Delay(220);
+        showSuggestions = false;
+        StateHasChanged();
+    }
+
+    private async Task SelectSuggestion(string suggestion)
+    {
+        Query.QueryText = suggestion;
+        showSuggestions = false;
+        await OnSearch.InvokeAsync(Query);
+    }
+
     private async Task TriggerSearch()
     {
+        showSuggestions = false;
         await OnSearch.InvokeAsync(Query);
     }
 
@@ -130,6 +213,7 @@
     private async Task SelectTrending(string topic)
     {
         Query.QueryText = topic;
+        showSuggestions = false;
         await OnSearch.InvokeAsync(Query);
     }
 

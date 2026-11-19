@@ -42,6 +42,22 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
+## Release Notes & Patch History
+
+### Version 2.0.1 Patch Notes
+
+> [!NOTE]
+> Version 2.0.1 scales search density, enhances study ergonomics, and decouples real-time note-taking in the lecture theater scratchpad from server rendering.
+
+- **Search Scaling & Pagination**: Scaled provider retrieval quotas across OpenAlex, Semantic Scholar, YouTube, and ScienceDirect with on-demand "Load More Sources" pagination.
+- **In-App PDF Reader**: Embedded modal reader for open-access papers (`open_access.oa_url`, Semantic Scholar OA PDFs) with 1-click download and citation generation.
+- **Lecture Scratchpad & Timestamp Deep-Linking**: Decoupled keystrokes from server SignalR rendering to eliminate cursor jumps and dropped characters. Added automatic timestamp parsing (e.g. `04:15`) that seeks the embedded player directly via `postMessage`.
+- **Course Folders & Markdown Study Guide Exporter**: Added subject folder filtering in the saved syllabus and 1-click Markdown (`.md`) export bundling citations, synopses, and lecture scratchpad notes.
+- **3-Way Reading Themes**: Instant toggle between Parchment, Warm Sepia (eye-strain relief), and Dark Archive (OLED mode) persisted in `localStorage`.
+- **Search Autocomplete**: Live suggestions dropdown matching academic topics and trending queries.
+
+---
+
 ## Core Capabilities (v2.0.1)
 
 - **Search Scaling & "Load More Sources" Pagination**:

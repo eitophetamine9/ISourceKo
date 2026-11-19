@@ -68,21 +68,21 @@
                                 <span class="text-xs font-bold uppercase tracking-wider text-oxford-300">
                                     Lecture Scratchpad
                                 </span>
-                                <span class="text-[11px] font-mono @(notesSaved ? "text-emerald-400" : "text-oxford-400")">
-                                    @(notesSaved ? "Saved locally" : "Auto-saves")
+                                <span @ref="statusElement" id="scratchpad-status" class="text-[11px] font-mono text-emerald-400">
+                                    Saved locally
                                 </span>
                             </div>
                             <p class="text-[11px] text-oxford-400 mb-3 leading-relaxed">
                                 Jot timestamps, key definitions, or exam questions while watching. Notes stay saved on this device for this lecture.
                             </p>
-                            <textarea value="@studyNotes"
-                                      @oninput="OnNotesChanged"
+                            <textarea @ref="notesTextarea"
+                                      id="lecture-scratchpad-input"
                                       placeholder="e.g.&#10;04:15 - Core intuition & proof sketch&#10;11:30 - Edge case to verify for midterm..."
                                       class="flex-1 w-full min-h-[160px] p-3 rounded bg-oxford-950 border border-oxford-800 text-xs text-bone placeholder-oxford-500 font-mono leading-relaxed focus:outline-none focus:ring-1 focus:ring-flame resize-none"></textarea>
                         </div>
 
                         <div class="mt-3 pt-3 border-t border-oxford-800 flex items-center justify-between text-[11px]">
-                            <span class="text-oxford-400">@studyNotes.Length chars</span>
+                            <span @ref="counterElement" id="scratchpad-counter" class="text-oxford-400">0 chars</span>
                             <button type="button"
                                     @onclick="CopyNotes"
                                     class="btn-press inline-flex items-center gap-1 px-2.5 py-1 rounded bg-oxford-800 hover:bg-oxford-700 text-bone font-semibold transition-colors">
@@ -150,10 +150,12 @@
     [Parameter] public EventCallback<SourceItem> OnOpenCitation { get; set; }
 
     private bool showNotes = true;
-    private string studyNotes = string.Empty;
-    private bool notesSaved = false;
     private bool notesCopied = false;
-    private string? loadedVideoId;
+    private ElementReference notesTextarea;
+    private ElementReference statusElement;
+    private ElementReference counterElement;
+    private string? attachedVideoId;
+    private bool shouldReattach = false;
 
     private string? VideoId =>
         Item != null && Item.Metadata.TryGetValue("VideoId", out var vid) && !string.IsNullOrWhiteSpace(vid)
@@ -162,58 +164,58 @@
 
     private bool isBookmarked => Item != null && BookmarkService.IsBookmarked(Item.Id);
 
+    protected override void OnParametersSet()
+    {
+        if (VideoId != attachedVideoId)
+        {
+            attachedVideoId = null;
+            shouldReattach = true;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!string.IsNullOrEmpty(VideoId) && loadedVideoId != VideoId)
+        if (showNotes && !string.IsNullOrEmpty(VideoId) && (firstRender || shouldReattach || attachedVideoId != VideoId))
         {
-            loadedVideoId = VideoId;
             try
             {
-                studyNotes = await JS.InvokeAsync<string>("isourcekoStorage.getVideoNotes", VideoId) ?? string.Empty;
-                notesSaved = false;
-                StateHasChanged();
+                await JS.InvokeVoidAsync("isourcekoStorage.initScratchpad", notesTextarea, VideoId, statusElement, counterElement);
+                attachedVideoId = VideoId;
+                shouldReattach = false;
             }
             catch { }
         }
         else if (string.IsNullOrEmpty(VideoId))
         {
-            loadedVideoId = null;
-            studyNotes = string.Empty;
+            attachedVideoId = null;
         }
-    }
-
-    private async Task OnNotesChanged(ChangeEventArgs e)
-    {
-        studyNotes = e.Value?.ToString() ?? string.Empty;
-        if (!string.IsNullOrEmpty(VideoId))
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("isourcekoStorage.saveVideoNotes", VideoId, studyNotes);
-                notesSaved = true;
-            }
-            catch { }
-        }
-    }
-
-    private async Task CopyNotes()
-    {
-        if (string.IsNullOrWhiteSpace(studyNotes)) return;
-        try
-        {
-            await JS.InvokeVoidAsync("isourcekoStorage.copyText", studyNotes);
-            notesCopied = true;
-            StateHasChanged();
-            await Task.Delay(1800);
-            notesCopied = false;
-            StateHasChanged();
-        }
-        catch { }
     }
 
     private void ToggleNotes()
     {
         showNotes = !showNotes;
+        if (showNotes)
+        {
+            shouldReattach = true;
+        }
+    }
+
+    private async Task CopyNotes()
+    {
+        if (string.IsNullOrEmpty(VideoId)) return;
+        try
+        {
+            var copied = await JS.InvokeAsync<bool>("isourcekoStorage.copyScratchpad", notesTextarea, VideoId);
+            if (copied)
+            {
+                notesCopied = true;
+                StateHasChanged();
+                await Task.Delay(1800);
+                notesCopied = false;
+                StateHasChanged();
+            }
+        }
+        catch { }
     }
 
     private void ToggleBookmark()

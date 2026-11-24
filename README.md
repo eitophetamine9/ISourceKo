@@ -66,6 +66,12 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 - **Direct YouTube URL Recognition & Resolution**: Instant resolution for direct YouTube video URLs (`watch?v=...`, `youtu.be/...`, `embed/...`, `shorts/...`) via public oEmbed, presenting the exact video for in-app theater viewing and scratchpad note-taking.
   - Scaled YouTube retrieval batch from 6 to 12 items per page and expanded multi-disciplinary educational fallback coverage.
   - **YouTube Query-Variant Pagination**: Implemented automatic query-suffix rotation per page to bypass static HTML limits, and expanded fallback coverage across multiple pages so clicking 'Load More Sources' reliably streams new video lectures.
+- **Dynamic Real-Time Trending Search Tracker**:
+  - Automatically records student search inquiries into a dedicated SQLite analytics repository (`SearchQueryLogs`).
+  - Ranks and serves popular searches dynamically in real time across the search desk and autocomplete dropdown, backed by diverse academic fallbacks.
+- **37-Discipline Curated Peer Notes Archive**:
+  - Overhauled the SQLite starter submission database to include at least 1 authentic, high-yield study guide across all 37 academic disciplines.
+  - Each note features detailed coursework content (mechanism maps, formula sheets, clinical matrices, proofs), student author metadata, high-resolution educational images, and peer discussion comments.
 
 ---
 

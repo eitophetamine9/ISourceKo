@@ -9,6 +9,7 @@ public class SourceAggregatorService : ISourceAggregatorService
 {
     private readonly IEnumerable<ISourceProvider> _providers;
     private readonly IBookmarkService _bookmarkService;
+    private readonly ISearchAnalyticsService _analyticsService;
     private readonly ILogger<SourceAggregatorService> _logger;
 
     private static readonly List<string> DiverseTrendingTopics = new()
@@ -30,10 +31,12 @@ public class SourceAggregatorService : ISourceAggregatorService
     public SourceAggregatorService(
         IEnumerable<ISourceProvider> providers,
         IBookmarkService bookmarkService,
+        ISearchAnalyticsService analyticsService,
         ILogger<SourceAggregatorService> logger)
     {
         _providers = providers;
         _bookmarkService = bookmarkService;
+        _analyticsService = analyticsService;
         _logger = logger;
     }
 
@@ -48,9 +51,12 @@ public class SourceAggregatorService : ISourceAggregatorService
 
         if (string.IsNullOrWhiteSpace(query.QueryText))
         {
-            response.SuggestedTopics = DiverseTrendingTopics.Take(8).ToList();
+            response.SuggestedTopics = await _analyticsService.GetTrendingTopicsAsync(8, ct);
             return response;
         }
+
+        // Record search query in dynamic analytics tracker
+        _ = _analyticsService.RecordSearchAsync(query.QueryText, ct);
 
         // Determine target providers based on specific platform or category selection
         var targetProviders = _providers.Where(p =>
@@ -163,7 +169,9 @@ public class SourceAggregatorService : ISourceAggregatorService
 
         sw.Stop();
         response.ElapsedTime = sw.Elapsed;
-        response.SuggestedTopics = DiverseTrendingTopics
+
+        var trending = await _analyticsService.GetTrendingTopicsAsync(10, ct);
+        response.SuggestedTopics = trending
             .Where(t => !t.Equals(query.QueryText, StringComparison.OrdinalIgnoreCase))
             .Take(6)
             .ToList();
@@ -171,9 +179,9 @@ public class SourceAggregatorService : ISourceAggregatorService
         return response;
     }
 
-    public Task<List<string>> GetTrendingTopicsAsync()
+    public async Task<List<string>> GetTrendingTopicsAsync()
     {
-        return Task.FromResult(DiverseTrendingTopics);
+        return await _analyticsService.GetTrendingTopicsAsync(8);
     }
 
     /// <summary>

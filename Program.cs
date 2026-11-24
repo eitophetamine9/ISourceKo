@@ -95,9 +95,10 @@ var connectionString = !string.IsNullOrWhiteSpace(envConnString)
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
-// Register Storage, Submission & Bookmark Services (SQLite-backed)
+// Register Storage, Submission, Bookmark & Search Analytics Services (SQLite-backed)
 builder.Services.AddSingleton<IStudentSubmissionService, StudentSubmissionService>();
 builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddSingleton<ISearchAnalyticsService, SearchAnalyticsService>();
 builder.Services.AddScoped<IBookmarkService, BookmarkService>();
 
 // Register Multi-Platform Source Providers (OpenAlex primary open-access + live connectors)

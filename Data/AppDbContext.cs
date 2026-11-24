@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<StudentSubmissionEntity> StudentSubmissions => Set<StudentSubmissionEntity>();
     public DbSet<StudentCommentEntity> StudentComments => Set<StudentCommentEntity>();
     public DbSet<BookmarkEntity> Bookmarks => Set<BookmarkEntity>();
+    public DbSet<SearchQueryLogEntity> SearchQueryLogs => Set<SearchQueryLogEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +47,14 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.ClientId);
             entity.HasIndex(e => new { e.ClientId, e.SourceId });
             entity.HasIndex(e => e.BookmarkedAt);
+        });
+
+        modelBuilder.Entity<SearchQueryLogEntity>(entity =>
+        {
+            entity.ToTable("SearchQueryLogs");
+            entity.HasKey(e => e.NormalizedQuery);
+            entity.HasIndex(e => e.SearchCount);
+            entity.HasIndex(e => e.LastSearchedAt);
         });
     }
 }

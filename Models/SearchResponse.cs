@@ -12,4 +12,9 @@ public class SearchResponse
     public List<string> SuggestedTopics { get; set; } = new();
     public bool HasMore { get; set; } = true;
     public int CurrentPage { get; set; } = 1;
+
+    // Category aggregations for faceted filtering
+    public int PapersCount { get; set; }
+    public int VideosCount { get; set; }
+    public int NotesCount { get; set; }
 }

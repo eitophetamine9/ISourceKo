@@ -59,6 +59,21 @@ module.exports = {
           DEFAULT: '#059669',
           light: '#ECFDF5',
           dark: '#047857',
+        },
+        arxiv: {
+          DEFAULT: '#B31B1B',
+          light: '#FEF2F2',
+          dark: '#7F1D1D',
+        },
+        pubmed: {
+          DEFAULT: '#15803D',
+          light: '#F0FDF4',
+          dark: '#166534',
+        },
+        crossref: {
+          DEFAULT: '#4338CA',
+          light: '#EEF2FF',
+          dark: '#312E81',
         }
       },
       fontFamily: {

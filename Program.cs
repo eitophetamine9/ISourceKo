@@ -95,8 +95,25 @@ var connectionString = !string.IsNullOrWhiteSpace(envConnString)
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
-// Register Storage, Submission, Bookmark & Search Analytics Services (SQLite-backed)
-builder.Services.AddSingleton<IStudentSubmissionService, StudentSubmissionService>();
+// Register Supabase Client (Cloud PostgreSQL Data API)
+var supabaseUrl = Environment.GetEnvironmentVariable("Supabase__Url") 
+    ?? builder.Configuration["Supabase:Url"];
+var supabaseKey = Environment.GetEnvironmentVariable("Supabase__Key") 
+    ?? builder.Configuration["Supabase:Key"];
+
+if (!string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supabaseKey))
+{
+    var options = new Supabase.SupabaseOptions
+    {
+        AutoConnectRealtime = false,
+        AutoRefreshToken = false
+    };
+    var supabase = new Supabase.Client(supabaseUrl, supabaseKey, options);
+    builder.Services.AddSingleton(supabase);
+}
+
+// Register Storage, Submission, Bookmark & Search Analytics Services
+builder.Services.AddSingleton<IStudentSubmissionService, SupabaseSubmissionService>();
 builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddSingleton<ISearchAnalyticsService, SearchAnalyticsService>();
 builder.Services.AddScoped<IBookmarkService, BookmarkService>();
@@ -115,6 +132,21 @@ builder.Services.AddTransient<ISourceProvider, CrossrefSourceProvider>();
 builder.Services.AddScoped<ISourceAggregatorService, SourceAggregatorService>();
 
 var app = builder.Build();
+
+// Initialize Supabase Client
+var supabaseClient = app.Services.GetService<Supabase.Client>();
+if (supabaseClient != null)
+{
+    try
+    {
+        await supabaseClient.InitializeAsync();
+        app.Logger.LogInformation("Connected to Supabase Data API.");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Failed to initialize Supabase client; falling back to local storage.");
+    }
+}
 
 // Initialize SQLite database schema and seed initial data if empty
 await DatabaseInitializer.InitializeAsync(app.Services);

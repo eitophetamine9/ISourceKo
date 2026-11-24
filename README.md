@@ -63,6 +63,8 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
   - Expanded collegiate subjects from 21 to 37 disciplines grouped across 6 academic faculties (Computing & Mathematics, Engineering & Physical Sciences, Health & Life Sciences, Business & Economics, Social Sciences & Law, and Humanities & Regional Studies).
   - Added specialized collegiate fields including Data Science & AI, Public Health & Epidemiology, Philippine & Southeast Asian Studies, and Biotechnology.
   - Added faculty-grouped navigation in the search desk subject selector.
+- **Direct YouTube URL Recognition & Resolution**: Instant resolution for direct YouTube video URLs (`watch?v=...`, `youtu.be/...`, `embed/...`, `shorts/...`) via public oEmbed, presenting the exact video for in-app theater viewing and scratchpad note-taking.
+  - Scaled YouTube retrieval batch from 6 to 12 items per page and expanded multi-disciplinary educational fallback coverage.
 
 ---
 

@@ -130,6 +130,17 @@
                     </svg>
                     <span>@Submission.Upvotes</span>
                 </button>
+
+                <!-- Soft-Delete / Remove Action -->
+                <button type="button"
+                        @onclick="DeleteNote"
+                        disabled="@isDeleting"
+                        title="Remove note (soft-delete)"
+                        class="btn-press inline-flex items-center gap-1 px-2 py-1 rounded border border-oxford-200 text-oxford-400 hover:text-red-700 hover:border-red-300 hover:bg-red-50 text-xs transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
             </div>
         </div>
 
@@ -184,9 +195,11 @@
 @code {
     [Parameter, EditorRequired] public StudentSubmission Submission { get; set; } = default!;
     [Parameter] public EventCallback<string> OnViewImage { get; set; }
+    [Parameter] public EventCallback<string> OnDelete { get; set; }
 
     private bool isUpvoted = false;
     private bool isUpvoting = false;
+    private bool isDeleting = false;
     private bool showComments = false;
     private string newCommentAuthor = string.Empty;
     private string newCommentText = string.Empty;
@@ -264,6 +277,25 @@
         finally
         {
             isPostingComment = false;
+        }
+    }
+
+    private async Task DeleteNote()
+    {
+        if (isDeleting) return;
+        isDeleting = true;
+
+        try
+        {
+            var success = await SubmissionService.SoftDeleteSubmissionAsync(Submission.Id);
+            if (success)
+            {
+                await OnDelete.InvokeAsync(Submission.Id);
+            }
+        }
+        finally
+        {
+            isDeleting = false;
         }
     }
 }

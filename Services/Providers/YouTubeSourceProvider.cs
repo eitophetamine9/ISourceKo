@@ -18,6 +18,10 @@ public class YouTubeSourceProvider : ISourceProvider
         @"var ytInitialData\s*=\s*(\{.*?\});\s*</script>",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
+    private static readonly Regex DirectLinkRegex = new(
+        @"(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     public SourcePlatform Platform => SourcePlatform.YouTube;
     public string DisplayName => "YouTube Learning";
 
@@ -39,6 +43,15 @@ public class YouTubeSourceProvider : ISourceProvider
             return new List<SourceItem>();
         }
 
+        // Direct YouTube Link Resolution: If the user inputs a YouTube URL or VideoId, resolve it immediately
+        var directMatch = DirectLinkRegex.Match(cleanQuery);
+        if (directMatch.Success)
+        {
+            var videoId = directMatch.Groups[1].Value;
+            _logger.LogInformation("Direct YouTube URL recognized ({VideoId}), resolving directly via oEmbed.", videoId);
+            return await ResolveDirectVideoAsync(videoId, field, ct);
+        }
+
         // 1. Official YouTube Data API v3 when an API key is configured
         var apiKey = _config["ApiKeys:YouTube"];
         if (!string.IsNullOrWhiteSpace(apiKey))
@@ -50,7 +63,7 @@ public class YouTubeSourceProvider : ISourceProvider
             }
         }
 
-        // 2. Live no-key YouTube educational query parser (extracts real embeddable VideoIds)
+        // 2. Live YouTube educational query parser (extracts real embeddable VideoIds)
         var parsedResults = await TrySearchViaPublicQueryAsync(cleanQuery, field, page, ct);
         if (parsedResults.Count > 0)
         {
@@ -61,7 +74,7 @@ public class YouTubeSourceProvider : ISourceProvider
         return page <= 1 ? GenerateCuratedFallback(cleanQuery, field) : new List<SourceItem>();
     }
 
-    private async Task<List<SourceItem>> TrySearchViaDataApiAsync(string query, AcademicField field, string apiKey, int page, CancellationToken ct)
+    private async Task<List<SourceItem>> ResolveDirectVideoAsync(string videoId, AcademicField field, CancellationToken ct)
     {
         try
         {
@@ -69,8 +82,83 @@ public class YouTubeSourceProvider : ISourceProvider
             timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
 
             var client = _httpClientFactory.CreateClient("YouTube");
+            var oEmbedUrl = $"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={videoId}&format=json";
+
+            using var response = await client.GetAsync(oEmbedUrl, timeoutCts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                var oEmbed = await response.Content.ReadFromJsonAsync<YouTubeOEmbedResponse>(cancellationToken: timeoutCts.Token);
+                if (oEmbed != null && !string.IsNullOrWhiteSpace(oEmbed.Title))
+                {
+                    var author = oEmbed.AuthorName ?? "YouTube Educator";
+                    var item = new SourceItem
+                    {
+                        Id = $"yt-{videoId}",
+                        Title = System.Net.WebUtility.HtmlDecode(oEmbed.Title),
+                        Description = $"Directly resolved YouTube lecture by {author}. In-app player and study scratchpad available.",
+                        Url = $"https://www.youtube.com/watch?v={videoId}",
+                        Platform = SourcePlatform.YouTube,
+                        AuthorOrPublisher = author,
+                        PublishedDate = DateTime.UtcNow,
+                        ThumbnailUrl = oEmbed.ThumbnailUrl ?? $"https://i.ytimg.com/vi/{videoId}/hqdefault.jpg",
+                        Tags = new List<string> { "YouTube", "Direct Match", "In-App Theater" },
+                        MetricsInfo = "Direct Link Match • In-App Theater",
+                        Field = field,
+                        Metadata = new Dictionary<string, string>
+                        {
+                            ["VideoId"] = videoId,
+                            ["Authors"] = author,
+                            ["Venue"] = "YouTube",
+                            ["Year"] = DateTime.UtcNow.Year.ToString(),
+                            ["SourceMode"] = "Direct Link Resolution"
+                        }
+                    };
+                    return new List<SourceItem> { item };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resolve direct YouTube oEmbed for {VideoId}, creating playable fallback.", videoId);
+        }
+
+        // Fallback constructing direct playable item
+        return new List<SourceItem>
+        {
+            new()
+            {
+                Id = $"yt-{videoId}",
+                Title = $"YouTube Lecture ({videoId})",
+                Description = "Directly linked YouTube video ready for in-app theater playback and scratchpad notes.",
+                Url = $"https://www.youtube.com/watch?v={videoId}",
+                Platform = SourcePlatform.YouTube,
+                AuthorOrPublisher = "YouTube Education",
+                PublishedDate = DateTime.UtcNow,
+                ThumbnailUrl = $"https://i.ytimg.com/vi/{videoId}/hqdefault.jpg",
+                Tags = new List<string> { "YouTube", "Direct Link", "In-App Theater" },
+                MetricsInfo = "Direct Link Match • In-App Theater",
+                Field = field,
+                Metadata = new Dictionary<string, string>
+                {
+                    ["VideoId"] = videoId,
+                    ["Venue"] = "YouTube",
+                    ["Year"] = DateTime.UtcNow.Year.ToString(),
+                    ["SourceMode"] = "Direct Link Resolution"
+                }
+            }
+        };
+    }
+
+    private async Task<List<SourceItem>> TrySearchViaDataApiAsync(string query, AcademicField field, string apiKey, int page, CancellationToken ct)
+    {
+        try
+        {
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(6));
+
+            var client = _httpClientFactory.CreateClient("YouTube");
             var encodedQuery = Uri.EscapeDataString($"{query} lecture tutorial");
-            var url = $"https://www.googleapis.com/youtube/v3/search?part=snippet&q={encodedQuery}&type=video&videoCategoryId=27&maxResults=25&key={apiKey}";
+            var url = $"https://www.googleapis.com/youtube/v3/search?part=snippet&q={encodedQuery}&type=video&videoCategoryId=27&maxResults=50&key={apiKey}";
 
             using var response = await client.GetAsync(url, timeoutCts.Token);
             if (!response.IsSuccessStatusCode) return new List<SourceItem>();
@@ -109,7 +197,7 @@ public class YouTubeSourceProvider : ISourceProvider
                 });
             }
 
-            return results.Skip(Math.Max(0, (page - 1) * 6)).Take(6).ToList();
+            return results.Skip(Math.Max(0, (page - 1) * 12)).Take(12).ToList();
         }
         catch (Exception ex)
         {
@@ -126,7 +214,10 @@ public class YouTubeSourceProvider : ISourceProvider
             timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
 
             var client = _httpClientFactory.CreateClient("YouTube");
-            var searchQuery = $"{query} lecture explanation";
+            var searchQuery = query.Contains("lecture", StringComparison.OrdinalIgnoreCase) || query.Contains("tutorial", StringComparison.OrdinalIgnoreCase)
+                ? query
+                : $"{query} lecture tutorial";
+
             var url = $"https://www.youtube.com/results?search_query={Uri.EscapeDataString(searchQuery)}";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -141,9 +232,9 @@ public class YouTubeSourceProvider : ISourceProvider
 
             using var doc = JsonDocument.Parse(match.Groups[1].Value);
             var videos = new List<SourceItem>();
-            ExtractVideoRenderers(doc.RootElement, videos, query, field, maxCount: 30);
+            ExtractVideoRenderers(doc.RootElement, videos, query, field, maxCount: 60);
 
-            var paged = videos.Skip(Math.Max(0, (page - 1) * 6)).Take(6).ToList();
+            var paged = videos.Skip(Math.Max(0, (page - 1) * 12)).Take(12).ToList();
 
             if (paged.Count > 0)
             {
@@ -294,7 +385,6 @@ public class YouTubeSourceProvider : ISourceProvider
 
     private static List<SourceItem> GenerateCuratedFallback(string cleanQuery, AcademicField field)
     {
-        // Verified, high-yield, embeddable educational lectures matched to query/discipline
         var q = cleanQuery.ToLowerInvariant();
 
         var curated = new List<(string VideoId, string Title, string Channel, string Duration, string Views, string Desc, AcademicField Field)>
@@ -302,22 +392,29 @@ public class YouTubeSourceProvider : ISourceProvider
             ("fNk_zzaMoSs", "Essence of Linear Algebra: Vectors & Transformations", "3Blue1Brown", "09:52", "18M views", "Visual intuition behind vectors, linear transformations, determinants, and eigenvalues.", AcademicField.Mathematics),
             ("RBSGKlAvoiM", "Data Structures Easy to Advanced Course — Full Tutorial", "freeCodeCamp.org", "08:03:17", "6.2M views", "Complete university-grade walkthrough of arrays, linked lists, trees, graphs, and Big-O analysis.", AcademicField.ComputerScience),
             ("aircAruvnKk", "But what is a neural network? | Deep Learning Chapter 1", "3Blue1Brown", "19:13", "17M views", "Visual introduction to neural network layers, weights, activation functions, and gradient descent.", AcademicField.ComputerScience),
-            ("bSMx0NS0XfY", "Organic Chemistry Reaction Mechanisms & Synthesis Review", "The Organic Chemistry Tutor", "42:18", "1.4M views", "Step-by-step breakdown of SN1, SN2, E1, E2 pathways, nucleophiles, and stereochemistry.", AcademicField.NaturalSciences),
-            ("00jbG_cfGuQ", "ATP & Respiration: Crash Course Biology #7", "CrashCourse", "13:26", "11M views", "Clear overview of glycolysis, Krebs cycle, and the electron transport chain for exam prep.", AcademicField.MedicineAndHealth),
-            ("g9aDizJpd_s", "Supply and Demand: Crash Course Economics #4", "CrashCourse", "10:22", "4.8M views", "Equilibrium price, market shifts, elasticity, and foundational microeconomic models.", AcademicField.BusinessAndEconomics)
+            ("bSMx0NS0XfY", "Organic Chemistry Reaction Mechanisms & Synthesis Review", "The Organic Chemistry Tutor", "42:18", "1.4M views", "Step-by-step breakdown of SN1, SN2, E1, E2 pathways, nucleophiles, and stereochemistry.", AcademicField.Chemistry),
+            ("00jbG_cfGuQ", "ATP & Respiration: Crash Course Biology #7", "CrashCourse", "13:26", "11M views", "Clear overview of glycolysis, Krebs cycle, and the electron transport chain for exam prep.", AcademicField.NaturalSciences),
+            ("g9aDizJpd_s", "Supply and Demand: Crash Course Economics #4", "CrashCourse", "10:22", "4.8M views", "Equilibrium price, market shifts, elasticity, and foundational microeconomic models.", AcademicField.EconomicsAndEconometrics),
+            ("IHZwWFHWa-w", "Calculus 1 Full College Course", "Professor Leonard", "11:42:00", "4.2M views", "Comprehensive college calculus lectures covering limits, continuity, derivatives, and applications.", AcademicField.Mathematics),
+            ("r-uolZeqZl4", "Classical Mechanics | Complete Physics Lecture", "MIT OpenCourseWare", "50:23", "2.1M views", "Newtonian mechanics, rotational dynamics, work-energy theorem, and gravitation.", AcademicField.PhysicsAndAstronomy),
+            ("8192i7iY1G8", "Introduction to Psychology", "YaleCourses", "48:15", "1.8M views", "Foundational psychology lecture covering cognitive development, behavior, and neural systems.", AcademicField.Psychology),
+            ("f_J8QU1m0NE", "Anatomy and Physiology: The Nervous System", "CrashCourse", "10:36", "7.1M views", "Central and peripheral nervous system organization, action potentials, and synapses.", AcademicField.MedicineAndHealth)
         };
 
-        // Pick top 3 most relevant curated embeddable lectures
         var ordered = curated
             .OrderByDescending(c =>
-                (q.Contains("alg") || q.Contains("data") || q.Contains("graph") ? (c.VideoId == "RBSGKlAvoiM" ? 5 : 0) : 0) +
-                (q.Contains("machine") || q.Contains("neural") || q.Contains("ai") ? (c.VideoId == "aircAruvnKk" ? 5 : 0) : 0) +
-                (q.Contains("chem") || q.Contains("organic") ? (c.VideoId == "bSMx0NS0XfY" ? 5 : 0) : 0) +
-                (q.Contains("linear") || q.Contains("matrix") || q.Contains("eigen") ? (c.VideoId == "fNk_zzaMoSs" ? 5 : 0) : 0) +
-                (q.Contains("bio") || q.Contains("cell") || q.Contains("resp") ? (c.VideoId == "00jbG_cfGuQ" ? 5 : 0) : 0) +
-                (q.Contains("econ") || q.Contains("supply") ? (c.VideoId == "g9aDizJpd_s" ? 5 : 0) : 0) +
-                (field != AcademicField.General && c.Field == field ? 3 : 0))
-            .Take(3)
+                (q.Contains("alg") || q.Contains("data") || q.Contains("graph") ? (c.VideoId == "RBSGKlAvoiM" ? 6 : 0) : 0) +
+                (q.Contains("machine") || q.Contains("neural") || q.Contains("ai") ? (c.VideoId == "aircAruvnKk" ? 6 : 0) : 0) +
+                (q.Contains("chem") || q.Contains("organic") ? (c.VideoId == "bSMx0NS0XfY" ? 6 : 0) : 0) +
+                (q.Contains("linear") || q.Contains("matrix") || q.Contains("eigen") ? (c.VideoId == "fNk_zzaMoSs" ? 6 : 0) : 0) +
+                (q.Contains("bio") || q.Contains("cell") || q.Contains("resp") ? (c.VideoId == "00jbG_cfGuQ" ? 6 : 0) : 0) +
+                (q.Contains("calc") || q.Contains("deriv") || q.Contains("limit") ? (c.VideoId == "IHZwWFHWa-w" ? 6 : 0) : 0) +
+                (q.Contains("phys") || q.Contains("mech") ? (c.VideoId == "r-uolZeqZl4" ? 6 : 0) : 0) +
+                (q.Contains("psych") ? (c.VideoId == "8192i7iY1G8" ? 6 : 0) : 0) +
+                (q.Contains("anat") || q.Contains("nurs") || q.Contains("health") ? (c.VideoId == "f_J8QU1m0NE" ? 6 : 0) : 0) +
+                (q.Contains("econ") || q.Contains("supply") ? (c.VideoId == "g9aDizJpd_s" ? 6 : 0) : 0) +
+                (field != AcademicField.General && c.Field == field ? 4 : 0))
+            .Take(6)
             .ToList();
 
         return ordered.Select(c => new SourceItem
@@ -343,6 +440,18 @@ public class YouTubeSourceProvider : ISourceProvider
                 ["SourceMode"] = "Curated Fallback"
             }
         }).ToList();
+    }
+
+    private sealed class YouTubeOEmbedResponse
+    {
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("author_name")]
+        public string? AuthorName { get; set; }
+
+        [JsonPropertyName("thumbnail_url")]
+        public string? ThumbnailUrl { get; set; }
     }
 
     private sealed class YouTubeApiResponse

@@ -159,6 +159,17 @@ public class StudentSubmissionService : IStudentSubmissionService
         return true;
     }
 
+    public async Task<bool> SoftDeleteSubmissionAsync(string id)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var entity = await db.StudentSubmissions.FindAsync(id);
+        if (entity == null) return false;
+
+        db.StudentSubmissions.Remove(entity);
+        await db.SaveChangesAsync();
+        return true;
+    }
+
     private static StudentSubmission MapToModel(StudentSubmissionEntity entity)
     {
         List<string> tags;

@@ -16,4 +16,5 @@ public interface IStudentSubmissionService
     Task<int> UpvoteAsync(string id);
     Task<int> RemoveUpvoteAsync(string id);
     Task<bool> AddCommentAsync(string submissionId, string author, string text);
+    Task<bool> SoftDeleteSubmissionAsync(string id);
 }

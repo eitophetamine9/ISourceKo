@@ -56,13 +56,18 @@
             }
         </div>
 
-        <!-- Subject Selector -->
-        <div class="relative min-w-[200px]">
+        <!-- Disciplinary Faculty & Subject Selector -->
+        <div class="relative min-w-[220px]">
             <select @bind="Query.Field" class="w-full py-3 px-3 bg-bone border border-oxford-200 rounded text-oxford-800 text-sm focus:outline-none focus:ring-2 focus:ring-oxford-950 cursor-pointer transition-all">
-                <option value="@AcademicField.General">All Subjects</option>
-                @foreach (var subject in AcademicFieldExtensions.AllSubjects)
+                <option value="@AcademicField.General">All Subjects & Disciplines</option>
+                @foreach (var group in GroupedSubjects)
                 {
-                    <option value="@subject">@subject.GetDisplayName()</option>
+                    <optgroup label="@group.Key">
+                        @foreach (var subject in group.Value)
+                        {
+                            <option value="@subject">@subject.GetDisplayName()</option>
+                        }
+                    </optgroup>
                 }
             </select>
         </div>
@@ -85,38 +90,56 @@
 
         <button type="button"
                 @onclick="() => SelectPlatform(SourcePlatform.All)"
-                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.All ? "bg-oxford-950 text-bone shadow-subtle ring-1 ring-oxford-900" : "bg-oxford-100/80 text-oxford-700 hover:bg-oxford-200")">
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.All ? "bg-oxford-950 text-bone shadow-subtle ring-1 ring-oxford-900" : "bg-oxford-100/80 text-oxford-700 hover:bg-oxford-200")">
             All Sources
         </button>
 
         <button type="button"
-                @onclick="() => SelectPlatform(SourcePlatform.YouTube)"
-                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.YouTube ? "bg-youtube text-white shadow-subtle ring-2 ring-red-300" : "bg-youtube-light text-youtube hover:bg-red-100 border border-red-200")">
-            YouTube Lectures
-        </button>
-
-        <button type="button"
                 @onclick="() => SelectPlatform(SourcePlatform.OpenAlex)"
-                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.OpenAlex ? "bg-openalex text-white shadow-subtle ring-2 ring-teal-300" : "bg-openalex-light text-openalex-dark hover:bg-teal-100 border border-teal-200")">
-            OpenAlex (Live)
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.OpenAlex ? "bg-openalex text-white shadow-subtle ring-2 ring-teal-300" : "bg-openalex-light text-openalex-dark hover:bg-teal-100 border border-teal-200")">
+            OpenAlex
         </button>
 
         <button type="button"
-                @onclick="() => SelectPlatform(SourcePlatform.ScienceDirect)"
-                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.ScienceDirect ? "bg-sciencedirect text-white shadow-subtle ring-2 ring-amber-300" : "bg-sciencedirect-light text-sciencedirect-dark hover:bg-amber-100 border border-amber-200")">
-            ScienceDirect Papers
+                @onclick="() => SelectPlatform(SourcePlatform.ArXiv)"
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.ArXiv ? "bg-arxiv text-white shadow-subtle ring-2 ring-red-300" : "bg-arxiv-light text-arxiv-dark hover:bg-red-100 border border-red-200")">
+            arXiv
+        </button>
+
+        <button type="button"
+                @onclick="() => SelectPlatform(SourcePlatform.PubMed)"
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.PubMed ? "bg-pubmed text-white shadow-subtle ring-2 ring-emerald-300" : "bg-pubmed-light text-pubmed-dark hover:bg-emerald-100 border border-emerald-200")">
+            PubMed
         </button>
 
         <button type="button"
                 @onclick="() => SelectPlatform(SourcePlatform.SemanticScholar)"
-                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.SemanticScholar ? "bg-scholar text-white shadow-subtle ring-2 ring-sky-300" : "bg-scholar-light text-scholar-dark hover:bg-sky-100 border border-sky-200")">
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.SemanticScholar ? "bg-scholar text-white shadow-subtle ring-2 ring-sky-300" : "bg-scholar-light text-scholar-dark hover:bg-sky-100 border border-sky-200")">
             Semantic Scholar
         </button>
 
         <button type="button"
+                @onclick="() => SelectPlatform(SourcePlatform.Crossref)"
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.Crossref ? "bg-crossref text-white shadow-subtle ring-2 ring-indigo-300" : "bg-crossref-light text-crossref-dark hover:bg-indigo-100 border border-indigo-200")">
+            Crossref
+        </button>
+
+        <button type="button"
+                @onclick="() => SelectPlatform(SourcePlatform.ScienceDirect)"
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.ScienceDirect ? "bg-sciencedirect text-white shadow-subtle ring-2 ring-amber-300" : "bg-sciencedirect-light text-sciencedirect-dark hover:bg-amber-100 border border-amber-200")">
+            ScienceDirect
+        </button>
+
+        <button type="button"
+                @onclick="() => SelectPlatform(SourcePlatform.YouTube)"
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.YouTube ? "bg-youtube text-white shadow-subtle ring-2 ring-red-300" : "bg-youtube-light text-youtube hover:bg-red-100 border border-red-200")">
+            YouTube Lectures
+        </button>
+
+        <button type="button"
                 @onclick="() => SelectPlatform(SourcePlatform.StudentCommunity)"
-                class="interactive-tab px-3 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.StudentCommunity ? "bg-evergreen text-white shadow-subtle ring-2 ring-emerald-300" : "bg-evergreen-light text-evergreen-dark hover:bg-emerald-100 border border-emerald-200")">
-            Peer Notes & Links
+                class="interactive-tab px-2.5 py-1 rounded text-xs font-semibold transition-all @(Query.Platform == SourcePlatform.StudentCommunity ? "bg-evergreen text-white shadow-subtle ring-2 ring-emerald-300" : "bg-evergreen-light text-evergreen-dark hover:bg-emerald-100 border border-emerald-200")">
+            Peer Notes
         </button>
     </div>
 
@@ -149,13 +172,20 @@
 
     private bool showSuggestions = false;
 
+    private static readonly Dictionary<string, List<AcademicField>> GroupedSubjects =
+        AcademicFieldExtensions.AllSubjects
+            .GroupBy(f => f.GetFacultyGroup())
+            .OrderBy(g => g.Key)
+            .ToDictionary(g => g.Key, g => g.OrderBy(s => s.GetDisplayName()).ToList());
+
     private static readonly List<string> CommonAcademicTopics = new()
     {
-        "Linear Algebra", "Machine Learning", "Quantum Mechanics", "Organic Chemistry",
-        "Cellular Biology", "Macroeconomics", "Data Structures", "Differential Equations",
-        "Neuroscience", "World History", "Cognitive Psychology", "Thermodynamics",
-        "Microbiology", "Microeconomics", "Calculus III", "Fluid Dynamics",
-        "Artificial Intelligence", "Biochemistry", "Philosophy of Mind", "Genetics"
+        "Machine Learning & Neural Nets", "Quantum Mechanics", "CRISPR Gene Editing", "Organic Chemistry",
+        "Cellular Biology", "Macroeconomic Policy", "Data Structures & Algorithms", "Differential Equations",
+        "Neuroscience & Brain Mapping", "World History", "Cognitive Psychology", "Thermodynamics",
+        "Microbiology & Virology", "Public Health Epidemiology", "Calculus III", "Fluid Dynamics",
+        "Artificial Intelligence", "Biochemistry", "Philosophy of Mind", "Genetics & Genomics",
+        "Civil Engineering Seismic Design", "Philippine Post-Colonial Studies", "Cybersecurity & Cryptography"
     };
 
     private IEnumerable<string> FilteredSuggestions

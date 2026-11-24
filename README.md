@@ -65,6 +65,7 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
   - Added faculty-grouped navigation in the search desk subject selector.
 - **Direct YouTube URL Recognition & Resolution**: Instant resolution for direct YouTube video URLs (`watch?v=...`, `youtu.be/...`, `embed/...`, `shorts/...`) via public oEmbed, presenting the exact video for in-app theater viewing and scratchpad note-taking.
   - Scaled YouTube retrieval batch from 6 to 12 items per page and expanded multi-disciplinary educational fallback coverage.
+  - **YouTube Query-Variant Pagination**: Implemented automatic query-suffix rotation per page to bypass static HTML limits, and expanded fallback coverage across multiple pages so clicking 'Load More Sources' reliably streams new video lectures.
 
 ---
 

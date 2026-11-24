@@ -80,9 +80,6 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 <details>
 <summary><strong>Version 2.0.1 Patch Notes</strong></summary>
 
-> [!NOTE]
-> Version 2.0.1 scales search density, enhances study ergonomics, and decouples real-time note-taking in the lecture theater scratchpad from server rendering.
-
 - **Search Scaling & Pagination**: Scaled provider retrieval quotas across OpenAlex, Semantic Scholar, YouTube, and ScienceDirect with on-demand "Load More Sources" pagination.
 - **In-App PDF Reader**: Embedded modal reader for open-access papers (`open_access.oa_url`, Semantic Scholar OA PDFs) with 1-click download and citation generation.
 - **Lecture Scratchpad & Timestamp Deep-Linking**: Decoupled keystrokes from server SignalR rendering to eliminate cursor jumps and dropped characters. Added automatic timestamp parsing (e.g. `04:15`) that seeks the embedded player directly via `postMessage`.
@@ -94,9 +91,6 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 <details>
 <summary><strong>Version 2.0.0 Patch Notes</strong></summary>
-
-> [!NOTE]
-> Version 2.0.0 established the foundational production architecture with live multi-platform APIs, SQLite persistence, and in-app lecture media theater.
 
 - **Live Open-Access Academic Search**: Integrated live OpenAlex (250M+ works, DOIs, open-access PDFs, reconstructed abstracts), Semantic Scholar, YouTube Learning, and ScienceDirect with resilient fallback.
 - **SQLite + Entity Framework Core 10 Persistence**: Persistent student submissions, peer discussion comments, and per-browser isolated study syllabus bookmarks.

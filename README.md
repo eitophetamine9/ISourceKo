@@ -44,10 +44,32 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ## Release Notes & Patch History
 
-### Version 2.0.2 Patch Notes
+### Version 2.0.3 Patch Notes
 
 > [!NOTE]
-> Version 2.0.2 significantly broadens academic research scope by integrating arXiv STEM preprints, PubMed biomedical literature, and Crossref DOIs, accompanied by a multifaceted filtering toolbar, category dossiers, and scholarly prioritization.
+> Version 2.0.3 upgrades the persistence layer to Supabase (PostgreSQL + Postgrest REST Data API) in compliance with the Part VI Project Milestone. Introduces full cloud CRUD, database-level active filtering, performance indexing, and soft-delete storage mechanics.
+
+- **Supabase Cloud Database Integration**:
+  - Connected the Student Exchange archive to a high-availability PostgreSQL database on Supabase in Southeast Asia (Singapore).
+  - Maintained multi-tiered architecture: C# client communicating with Supabase Data API (`GET`, `POST`, `PATCH`) with seamless local SQLite fallback for resilient offline execution.
+- **Full Cloud CRUD & Fast Habits**:
+  - **Create**: Student notes deposited via `/submit` send `POST /rest/v1/student_submissions` with the action button disabled while saving to ensure idempotency.
+  - **Read**: Community Study Hall queries active rows directly from Supabase via `GET /rest/v1/student_submissions` with `.Range(0, 49)`.
+  - **Update**: Upvoting increments counters via `PATCH` with local de-duplication guards.
+  - **Delete**: Soft-delete marks `deleted_at = now()` without purging records.
+- **Performance & Three Fast Habits**:
+  - Added PostgreSQL indexes on `field` and `deleted_at` in `database/schema.sql` for instant disciplinary searches.
+  - Enforced database-level filtering (`deleted_at is null`) so only required rows traverse the network.
+  - Eliminated N+1 query loops by querying entities in single aggregated batches.
+- **Security & Row Level Security (RLS)**:
+  - Structured `database/schema.sql` with two locks: `GRANT` to anon role and explicit RLS policies (`read_active_notes`, `insert_note`, `update_note`).
+
+---
+
+### Previous Version Archives
+
+<details>
+<summary><strong>Version 2.0.2 Patch Notes</strong></summary>
 
 - **Multi-Source Expansion**: Integrated three major, live academic providers alongside OpenAlex, Semantic Scholar, ScienceDirect, and YouTube:
   - **arXiv API**: High-yield STEM, Math, Physics, and CS preprints with guaranteed open-access full-text PDFs.
@@ -60,22 +82,17 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
   - **Publication Recency Filter**: Quick windowing by Any Time, Past Year, Past 3 Years, and Past 5 Years.
   - **Active Filter Indicators**: Clear display of active parameters with 1-click Reset Filters action.
 - **Disciplinary Diversity & Subject Expansion**:
-  - Expanded collegiate subjects from 21 to 37 disciplines grouped across 6 academic faculties (Computing & Mathematics, Engineering & Physical Sciences, Health & Life Sciences, Business & Economics, Social Sciences & Law, and Humanities & Regional Studies).
+  - Expanded collegiate subjects from 21 to 37 disciplines grouped across 6 academic faculties.
   - Added specialized collegiate fields including Data Science & AI, Public Health & Epidemiology, Philippine & Southeast Asian Studies, and Biotechnology.
   - Added faculty-grouped navigation in the search desk subject selector.
-- **Direct YouTube URL Recognition & Resolution**: Instant resolution for direct YouTube video URLs (`watch?v=...`, `youtu.be/...`, `embed/...`, `shorts/...`) via public oEmbed, presenting the exact video for in-app theater viewing and scratchpad note-taking.
-  - Scaled YouTube retrieval batch from 6 to 12 items per page and expanded multi-disciplinary educational fallback coverage.
-  - **YouTube Query-Variant Pagination**: Implemented automatic query-suffix rotation per page to bypass static HTML limits, and expanded fallback coverage across multiple pages so clicking 'Load More Sources' reliably streams new video lectures.
+- **Direct YouTube URL Recognition & Resolution**: Instant resolution for direct YouTube video URLs via public oEmbed for in-app theater viewing.
+  - Query-variant pagination per page and multi-page educational curriculum ensuring 'Load More Sources' reliably streams new video lectures.
 - **Dynamic Real-Time Trending Search Tracker**:
-  - Automatically records student search inquiries into a dedicated SQLite analytics repository (`SearchQueryLogs`).
-  - Ranks and serves popular searches dynamically in real time across the search desk and autocomplete dropdown, backed by diverse academic fallbacks.
+  - Automatically records student search inquiries into dedicated analytics repository (`SearchQueryLogs`).
 - **37-Discipline Curated Peer Notes Archive**:
-  - Overhauled the SQLite starter submission database to include at least 1 authentic, high-yield study guide across all 37 academic disciplines.
-  - Each note features detailed coursework content (mechanism maps, formula sheets, clinical matrices, proofs), student author metadata, high-resolution educational images, and peer discussion comments.
+  - Overhauled starter submission database to include at least 1 authentic, high-yield study guide across all 37 disciplines.
 
----
-
-### Previous Version Archives
+</details>
 
 <details>
 <summary><strong>Version 2.0.1 Patch Notes</strong></summary>
@@ -103,8 +120,21 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
-## Core Capabilities (v2.0.2)
+## Database Storage Pattern & Architectural Rationale
 
+In ISourceKO, peer-submitted study guides, formula sheets, and reaction diagrams in `student_submissions` utilize a **Soft Delete** storage pattern (`deleted_at timestamptz`). When a student or administrator removes a study note, the application records a timestamp in `deleted_at` instead of executing an irreversible hard SQL `DELETE`. Because collegiate study materials often accumulate peer discussion comments, upvotes, and bookmarks across multiple student syllabi, soft deletion preserves relational integrity and prevents broken syllabus references. Database-level Row Level Security policies (`using (deleted_at is null)`) and query filters ensure deleted materials are immediately hidden from the active community feed while remaining recoverable for administrative audits or accidental deletion appeals.
+
+---
+
+## Core Capabilities (v2.0.3)
+
+- **Cloud Database Persistence with Supabase & Postgrest**:
+  - Full CRUD lifecycle (Create, Read, Update upvotes, Soft Delete) powered by a high-availability PostgreSQL database in Southeast Asia (Singapore).
+  - Resilient architecture with local SQLite fallback for seamless offline resilience.
+- **Three Fast Database Habits**:
+  - Filter in the database: Active records and disciplinary filters applied before network transit.
+  - Performance indexing on `field` and `deleted_at` columns.
+  - Zero N+1 query loops.
 - **Search Scaling & "Load More Sources" Pagination**:
   - Scaled OpenAlex, Semantic Scholar, YouTube, and ScienceDirect query quotas with smooth on-demand pagination.
   - Tactile **"Load More Sources"** action fetches subsequent batches without page reloads or layout shift.

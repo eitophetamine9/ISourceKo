@@ -418,6 +418,7 @@
         try
         {
             response = await AggregatorService.AggregateSearchAsync(currentQuery);
+            trendingTopics = await AggregatorService.GetTrendingTopicsAsync();
         }
         finally
         {

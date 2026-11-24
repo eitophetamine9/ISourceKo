@@ -75,7 +75,10 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ---
 
-### Version 2.0.1 Patch Notes
+### Previous Version Archives
+
+<details>
+<summary><strong>Version 2.0.1 Patch Notes</strong></summary>
 
 > [!NOTE]
 > Version 2.0.1 scales search density, enhances study ergonomics, and decouples real-time note-taking in the lecture theater scratchpad from server rendering.
@@ -87,9 +90,26 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 - **3-Way Reading Themes**: Instant toggle between Parchment, Warm Sepia (eye-strain relief), and Dark Archive (OLED mode) persisted in `localStorage`.
 - **Search Autocomplete**: Live suggestions dropdown matching academic topics and trending queries.
 
+</details>
+
+<details>
+<summary><strong>Version 2.0.0 Patch Notes</strong></summary>
+
+> [!NOTE]
+> Version 2.0.0 established the foundational production architecture with live multi-platform APIs, SQLite persistence, and in-app lecture media theater.
+
+- **Live Open-Access Academic Search**: Integrated live OpenAlex (250M+ works, DOIs, open-access PDFs, reconstructed abstracts), Semantic Scholar, YouTube Learning, and ScienceDirect with resilient fallback.
+- **SQLite + Entity Framework Core 10 Persistence**: Persistent student submissions, peer discussion comments, and per-browser isolated study syllabus bookmarks.
+- **In-App YouTube Lecture Theater**: Distraction-free embedded player (`youtube-nocookie.com`) with a per-video Lecture Scratchpad saved locally.
+- **Multi-Format Academic Citation Suite**: Instant copy and `.bib` download in APA 7th, MLA 9th, Chicago 17th, and BibTeX (single source or full saved syllabus).
+- **Zoomable Note Darkroom & Upvote Guard**: 50%–300% pan/zoom/rotate note inspector, device-guarded upvoting, and 20 collegiate subjects.
+- **Production Security & Deployment**: Multi-stage Docker build, patched SQLite dependencies, server-side image signature checks, and Railway persistent `/data` volume support.
+
+</details>
+
 ---
 
-## Core Capabilities (v2.0.1)
+## Core Capabilities (v2.0.2)
 
 - **Search Scaling & "Load More Sources" Pagination**:
   - Scaled OpenAlex, Semantic Scholar, YouTube, and ScienceDirect query quotas with smooth on-demand pagination.

@@ -209,7 +209,7 @@ else
         <!-- Academic Actions Footer -->
         <div class="mt-5 pt-3.5 border-t border-oxford-100 flex flex-wrap items-center justify-between gap-2 text-xs">
             <span class="text-oxford-500 text-[11px] font-semibold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full @(Item.Platform == SourcePlatform.OpenAlex ? "bg-openalex" : "bg-sciencedirect")"></span>
+                <span class="w-1.5 h-1.5 rounded-full @GetPlatformDotColor(Item.Platform)"></span>
                 @(Item.MetricsInfo ?? "Scholarly Record")
             </span>
 
@@ -289,6 +289,18 @@ else
     private bool IsLiveSource =>
         Item.Metadata.TryGetValue("SourceMode", out var mode) &&
         mode.StartsWith("Live", StringComparison.OrdinalIgnoreCase);
+
+    private static string GetPlatformDotColor(SourcePlatform platform) => platform switch
+    {
+        SourcePlatform.OpenAlex => "bg-openalex",
+        SourcePlatform.ArXiv => "bg-arxiv",
+        SourcePlatform.PubMed => "bg-pubmed",
+        SourcePlatform.Crossref => "bg-crossref",
+        SourcePlatform.SemanticScholar => "bg-scholar",
+        SourcePlatform.ScienceDirect => "bg-sciencedirect",
+        SourcePlatform.StudentCommunity => "bg-evergreen",
+        _ => "bg-oxford-400"
+    };
 
     private void ToggleBookmark()
     {

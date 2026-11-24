@@ -66,6 +66,23 @@ builder.Services.AddHttpClient("Elsevier", client =>
     client.Timeout = TimeSpan.FromSeconds(6);
     client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 });
+builder.Services.AddHttpClient("ArXiv", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.0 (mailto:research@isourceko.edu)");
+});
+builder.Services.AddHttpClient("PubMed", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.0 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("Crossref", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.0 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
 
 // Configure SQLite Persistence via Entity Framework Core
 var envConnString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
@@ -89,6 +106,9 @@ builder.Services.AddTransient<ISourceProvider, YouTubeSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, SemanticScholarSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, ScienceDirectSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, CommunitySourceProvider>();
+builder.Services.AddTransient<ISourceProvider, ArXivSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, PubMedSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, CrossrefSourceProvider>();
 
 // Register Aggregator
 builder.Services.AddScoped<ISourceAggregatorService, SourceAggregatorService>();

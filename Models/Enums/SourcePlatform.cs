@@ -7,5 +7,8 @@ public enum SourcePlatform
     OpenAlex,
     ScienceDirect,
     SemanticScholar,
-    StudentCommunity
+    StudentCommunity,
+    ArXiv,
+    PubMed,
+    Crossref
 }

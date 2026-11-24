@@ -44,6 +44,28 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ## Release Notes & Patch History
 
+### Version 2.0.2 Patch Notes
+
+> [!NOTE]
+> Version 2.0.2 significantly broadens academic research scope by integrating arXiv STEM preprints, PubMed biomedical literature, and Crossref DOIs, accompanied by a multifaceted filtering toolbar, category dossiers, and scholarly prioritization.
+
+- **Multi-Source Expansion**: Integrated three major, live academic providers alongside OpenAlex, Semantic Scholar, ScienceDirect, and YouTube:
+  - **arXiv API**: High-yield STEM, Math, Physics, and CS preprints with guaranteed open-access full-text PDFs.
+  - **PubMed / NCBI E-utilities**: Authoritative biomedical, clinical, nursing, and health sciences index.
+  - **Crossref DOI Registry**: Global peer-reviewed academic publication metadata and DOI resolution.
+- **Faceted Filtering Toolbar**:
+  - **Category Dossier Tabs**: Instant filtering by All Resources, Scholarly Papers & Preprints (with live count badges), Lecture Videos, and Student Notes.
+  - **Scholarly Prioritization**: Default ranking elevates peer-reviewed literature and preprints above video media and student notes.
+  - **Open Access PDF Filter**: Dedicated 1-click toggle to isolate papers with accessible full-text PDFs.
+  - **Publication Recency Filter**: Quick windowing by Any Time, Past Year, Past 3 Years, and Past 5 Years.
+  - **Active Filter Indicators**: Clear display of active parameters with 1-click Reset Filters action.
+- **Disciplinary Diversity & Subject Expansion**:
+  - Expanded collegiate subjects from 21 to 37 disciplines grouped across 6 academic faculties (Computing & Mathematics, Engineering & Physical Sciences, Health & Life Sciences, Business & Economics, Social Sciences & Law, and Humanities & Regional Studies).
+  - Added specialized collegiate fields including Data Science & AI, Public Health & Epidemiology, Philippine & Southeast Asian Studies, and Biotechnology.
+  - Added faculty-grouped navigation in the search desk subject selector.
+
+---
+
 ### Version 2.0.1 Patch Notes
 
 > [!NOTE]

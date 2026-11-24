@@ -34,7 +34,7 @@
         <!-- Masked Reveal Line 4: Body Description -->
         <div class="overflow-hidden mt-3">
             <p class="masked-line-inner text-xs sm:text-sm text-oxford-600 max-w-2xl mx-auto leading-relaxed will-change-transform">
-                Consolidate your course research. Query live OpenAlex open-access papers, Semantic Scholar citations, ScienceDirect journals, in-app YouTube lectures, and SQLite-persisted student guides in a single pass.
+                Consolidate your collegiate research. Query live OpenAlex papers, arXiv STEM preprints, PubMed medical research, Semantic Scholar citations, Crossref DOIs, ScienceDirect journals, YouTube lectures, and student notes in a single pass.
             </p>
         </div>
     </header>
@@ -47,8 +47,8 @@
     <!-- Kinetic Marquee: Reacts to User's Scroll Velocity & Direction -->
     <section class="w-full overflow-hidden py-3 border-y border-oxford-200/70 bg-white/70 backdrop-blur-sm my-8 select-none" aria-hidden="true">
         <div class="kinetic-marquee-track flex whitespace-nowrap will-change-transform text-[11px] font-mono font-bold tracking-widest text-oxford-600 uppercase">
-            <span>OPENALEX 250M+ LIVE PAPERS &nbsp;•&nbsp; IN-APP YOUTUBE LECTURE THEATER &nbsp;•&nbsp; SEMANTIC SCHOLAR CITATION GRAPH &nbsp;•&nbsp; SCIENCEDIRECT PEER-REVIEWED JOURNALS &nbsp;•&nbsp; APA / MLA / CHICAGO / BIBTEX EXPORTS &nbsp;•&nbsp; SQLITE STUDENT ARCHIVE &nbsp;•&nbsp; </span>
-            <span>OPENALEX 250M+ LIVE PAPERS &nbsp;•&nbsp; IN-APP YOUTUBE LECTURE THEATER &nbsp;•&nbsp; SEMANTIC SCHOLAR CITATION GRAPH &nbsp;•&nbsp; SCIENCEDIRECT PEER-REVIEWED JOURNALS &nbsp;•&nbsp; APA / MLA / CHICAGO / BIBTEX EXPORTS &nbsp;•&nbsp; SQLITE STUDENT ARCHIVE &nbsp;•&nbsp; </span>
+            <span>OPENALEX 250M+ PAPERS &nbsp;•&nbsp; ARXIV STEM PREPRINTS &nbsp;•&nbsp; PUBMED / NCBI HEALTH SCIENCES &nbsp;•&nbsp; IN-APP YOUTUBE LECTURE THEATER &nbsp;•&nbsp; SEMANTIC SCHOLAR GRAPH &nbsp;•&nbsp; CROSSREF DOI REGISTRY &nbsp;•&nbsp; SCIENCEDIRECT JOURNALS &nbsp;•&nbsp; APA / MLA / CHICAGO / BIBTEX &nbsp;•&nbsp; SQLITE STUDENT ARCHIVE &nbsp;•&nbsp; </span>
+            <span>OPENALEX 250M+ PAPERS &nbsp;•&nbsp; ARXIV STEM PREPRINTS &nbsp;•&nbsp; PUBMED / NCBI HEALTH SCIENCES &nbsp;•&nbsp; IN-APP YOUTUBE LECTURE THEATER &nbsp;•&nbsp; SEMANTIC SCHOLAR GRAPH &nbsp;•&nbsp; CROSSREF DOI REGISTRY &nbsp;•&nbsp; SCIENCEDIRECT JOURNALS &nbsp;•&nbsp; APA / MLA / CHICAGO / BIBTEX &nbsp;•&nbsp; SQLITE STUDENT ARCHIVE &nbsp;•&nbsp; </span>
         </div>
     </section>
 
@@ -60,7 +60,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <span class="inline-flex items-center gap-2 text-xs text-oxford-600 font-mono font-medium">
                         <span class="w-2 h-2 rounded-full bg-flame animate-ping"></span>
-                        Executing parallel live queries across OpenAlex, Semantic Scholar, YouTube, and Student Archive...
+                        Executing parallel queries across OpenAlex, arXiv, PubMed, Semantic Scholar, Crossref, ScienceDirect, YouTube and Student Archive...
                     </span>
                 </div>
                 <LoadingSkeleton Count="6" />
@@ -69,7 +69,7 @@
         else if (response != null && !string.IsNullOrWhiteSpace(response.Query))
         {
             <!-- Results Header & Counts with Pop Pills -->
-            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 pb-3 mb-6 border-b border-oxford-200">
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 pb-3 mb-4 border-b border-oxford-200">
                 <div>
                     <h2 class="font-serif text-xl font-bold text-oxford-950">
                         Results for "<span class="text-oxford-900 italic font-semibold">@response.Query</span>"
@@ -80,10 +80,10 @@
                 </div>
 
                 <!-- Platform Count Pills with Tactile Border -->
-                <div class="flex flex-wrap items-center gap-2 text-xs">
-                    @foreach (var kvp in response.CountByPlatform)
+                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                    @foreach (var kvp in response.CountByPlatform.Where(k => k.Value > 0))
                     {
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-oxford-200 rounded shadow-subtle text-oxford-700 font-medium">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white border border-oxford-200 rounded shadow-subtle text-oxford-700 font-medium text-[11px]">
                             <PlatformBadge Platform="kvp.Key" />
                             <span class="font-mono font-bold text-oxford-900">@kvp.Value</span>
                         </span>
@@ -91,8 +91,108 @@
                 </div>
             </div>
 
+            <!-- PROPER FACETED FILTERING SECTION (Research Paper Priority, Category Dossiers, Date & Open Access) -->
+            <div class="mb-6 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-oxford-200 shadow-subtle flex flex-col gap-3">
+                <!-- Top Row: Primary Category Dossiers Tabs -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-oxford-100">
+                    <div class="inline-flex items-center p-1 rounded-lg bg-oxford-100/80 border border-oxford-200 text-xs font-semibold" role="tablist">
+                        <button type="button"
+                                @onclick="() => FilterByCategory(ResourceCategory.All)"
+                                class="px-3 py-1.5 rounded-md text-xs transition-all @(currentCategory == ResourceCategory.All ? "bg-oxford-950 text-bone shadow-subtle font-bold" : "text-oxford-600 hover:text-oxford-900")">
+                            All Resources (@response.TotalResults)
+                        </button>
+                        <button type="button"
+                                @onclick="() => FilterByCategory(ResourceCategory.ScholarlyPapers)"
+                                class="px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5 @(currentCategory == ResourceCategory.ScholarlyPapers ? "bg-academic text-white shadow-subtle font-bold" : "text-oxford-600 hover:text-academic")">
+                            <span>Scholarly Papers</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono @(currentCategory == ResourceCategory.ScholarlyPapers ? "bg-white/20 text-white" : "bg-academic-light text-academic")">@response.PapersCount</span>
+                        </button>
+                        <button type="button"
+                                @onclick="() => FilterByCategory(ResourceCategory.LectureVideos)"
+                                class="px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5 @(currentCategory == ResourceCategory.LectureVideos ? "bg-youtube text-white shadow-subtle font-bold" : "text-oxford-600 hover:text-youtube")">
+                            <span>Lecture Videos</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono @(currentCategory == ResourceCategory.LectureVideos ? "bg-white/20 text-white" : "bg-youtube-light text-youtube")">@response.VideosCount</span>
+                        </button>
+                        <button type="button"
+                                @onclick="() => FilterByCategory(ResourceCategory.StudentNotes)"
+                                class="px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5 @(currentCategory == ResourceCategory.StudentNotes ? "bg-evergreen text-white shadow-subtle font-bold" : "text-oxford-600 hover:text-evergreen")">
+                            <span>Student Notes</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono @(currentCategory == ResourceCategory.StudentNotes ? "bg-white/20 text-white" : "bg-evergreen-light text-evergreen")">@response.NotesCount</span>
+                        </button>
+                    </div>
+
+                    <!-- Sort Order Selector -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-semibold text-oxford-500">Sort:</span>
+                        <select value="@currentSortBy" @onchange="OnSortChanged" class="py-1 px-2.5 bg-bone border border-oxford-200 rounded text-oxford-800 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-oxford-950 cursor-pointer">
+                            <option value="scholarly">Scholarly Priority (Papers First)</option>
+                            <option value="date">Most Recent</option>
+                            <option value="citations">Most Cited / High Impact</option>
+                            <option value="relevance">Corpus Relevance</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Multi-Facet Filters (Open Access PDF & Date Recency) -->
+                <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Open Access PDF Toggle -->
+                        <button type="button"
+                                @onclick="ToggleOpenAccessPdf"
+                                class="btn-press inline-flex items-center gap-1.5 px-3 py-1 rounded-md border text-xs font-semibold transition-all @(isOpenAccessOnly ? "bg-emerald-600 text-white border-emerald-700 shadow-subtle" : "bg-oxford-50 text-oxford-700 border-oxford-200 hover:bg-oxford-100")">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Open Access PDF Only</span>
+                            @if (isOpenAccessOnly)
+                            {
+                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                            }
+                        </button>
+
+                        <!-- Recency Quick Filter -->
+                        <div class="inline-flex items-center gap-1">
+                            <span class="text-oxford-500 text-[11px] font-semibold mr-1">Publication:</span>
+                            <button type="button"
+                                    @onclick="() => FilterByDateRange(DateRangeFilter.AnyTime)"
+                                    class="px-2 py-0.5 rounded text-[11px] font-medium transition-all @(currentDateRange == DateRangeFilter.AnyTime ? "bg-oxford-900 text-white" : "text-oxford-600 hover:text-oxford-900")">
+                                Any Time
+                            </button>
+                            <button type="button"
+                                    @onclick="() => FilterByDateRange(DateRangeFilter.PastYear)"
+                                    class="px-2 py-0.5 rounded text-[11px] font-medium transition-all @(currentDateRange == DateRangeFilter.PastYear ? "bg-oxford-900 text-white" : "text-oxford-600 hover:text-oxford-900")">
+                                Past Year
+                            </button>
+                            <button type="button"
+                                    @onclick="() => FilterByDateRange(DateRangeFilter.PastThreeYears)"
+                                    class="px-2 py-0.5 rounded text-[11px] font-medium transition-all @(currentDateRange == DateRangeFilter.PastThreeYears ? "bg-oxford-900 text-white" : "text-oxford-600 hover:text-oxford-900")">
+                                Past 3 Years
+                            </button>
+                            <button type="button"
+                                    @onclick="() => FilterByDateRange(DateRangeFilter.PastFiveYears)"
+                                    class="px-2 py-0.5 rounded text-[11px] font-medium transition-all @(currentDateRange == DateRangeFilter.PastFiveYears ? "bg-oxford-900 text-white" : "text-oxford-600 hover:text-oxford-900")">
+                                Past 5 Years
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (HasActiveFilters)
+                    {
+                        <button type="button"
+                                @onclick="ResetFilters"
+                                class="text-xs text-flame hover:underline font-semibold flex items-center gap-1">
+                            <span>Reset Filters</span>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    }
+                </div>
+            </div>
+
             @if (response.Items.Any())
             {
+                <!-- Delineated Results Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
                     @foreach (var item in response.Items)
                     {
@@ -124,7 +224,7 @@
                             }
                         </button>
                         <span class="text-[11px] font-mono text-oxford-500">
-                            Page @currentPage loaded • OpenAlex, Semantic Scholar, YouTube & ScienceDirect
+                            Page @currentPage loaded • OpenAlex, arXiv, PubMed, Semantic Scholar, Crossref, ScienceDirect & YouTube
                         </span>
                     </div>
                 }
@@ -137,7 +237,7 @@
             }
             else
             {
-                <EmptyState Title="No indexed sources found" Message="Try searching with a broader topic keyword, or select 'All Sources' to include video lectures and student notes." />
+                <EmptyState Title="No indexed sources found" Message="Try adjusting your filter criteria, broadening your query keywords, or deselecting 'Open Access PDF Only'." />
             }
         }
         else
@@ -182,64 +282,58 @@
                             </div>
                         </div>
 
-                        <!-- Panel 2: OpenAlex & Peer-Reviewed State -->
+                        <!-- Panel 2: Live Academic Connector State -->
                         <div class="split-visual-panel transition-all">
                             <div class="p-4 rounded-xl bg-oxford-900 border border-oxford-800 space-y-2">
-                                <span class="text-xs font-mono font-bold text-teal-400">[02] OpenAlex &amp; Semantic Scholar Live APIs</span>
+                                <span class="text-xs font-mono font-bold text-teal-400">[02] Live Multi-Corpus Scholarly Network</span>
                                 <p class="text-xs text-oxford-300 leading-relaxed">
-                                    Queries 250M+ open-access scholarly works with DOI links, direct PDFs, citation counts, and instant APA, MLA, Chicago, and BibTeX exports.
+                                    Harvest live papers across OpenAlex, arXiv preprints, PubMed NCBI, Semantic Scholar, Crossref DOIs, and ScienceDirect with instant abstract parsing.
                                 </p>
                                 <div class="pt-2 flex items-center justify-between font-mono text-[11px] text-oxford-400">
-                                    <span>Works Index: 250M+</span>
-                                    <span class="text-emerald-400">STATUS: VERIFIED</span>
+                                    <span>Connectors: 7 Live Streams</span>
+                                    <span class="text-emerald-400">SYNC: Active</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Panel 3: Student Exchange SQLite State -->
+                        <!-- Panel 3: SQLite Peer Archive State -->
                         <div class="split-visual-panel transition-all">
                             <div class="p-4 rounded-xl bg-oxford-900 border border-oxford-800 space-y-2">
-                                <span class="text-xs font-mono font-bold text-emerald-400">[03] SQLite Student Note Archive</span>
+                                <span class="text-xs font-mono font-bold text-emerald-400">[03] SQLite-Persisted Community Knowledge</span>
                                 <p class="text-xs text-oxford-300 leading-relaxed">
-                                    Persists handwritten notes, zoomable diagrams, peer discussions, and de-duplicated upvotes locally via Entity Framework Core.
+                                    Access peer-submitted lecture notes, study guides, and campus discussions persisted with Entity Framework Core and full-text search.
                                 </p>
                                 <div class="pt-2 flex items-center justify-between font-mono text-[11px] text-oxford-400">
-                                    <span>Engine: EF Core + SQLite</span>
-                                    <span class="text-emerald-400">STATUS: PERSISTED</span>
+                                    <span>Database: SQLite WAL</span>
+                                    <span class="text-emerald-400">STORAGE: Mounted</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right: Narrative Story Cards Scrolling Alongside -->
+                    <!-- Right: Narrative Scroll Story Steps -->
                     <div class="lg:col-span-7 space-y-8">
-                        <div class="split-story-card card-lift bg-white p-6 rounded-xl border border-oxford-200/90 shadow-subtle space-y-3">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-youtube-light text-youtube border border-red-200">Stage 01</span>
-                                <h3 class="font-serif text-lg font-bold text-oxford-950">Distraction-Free Visual Mastery</h3>
-                            </div>
-                            <p class="text-xs sm:text-sm text-oxford-700 leading-relaxed">
-                                Before tackling dense formulas, students often need intuitive geometry and animations. Launch lectures directly inside ISourceKO's Theater Modal with a side-by-side scratchpad—without getting pulled into algorithmic rabbit holes.
+                        <div class="p-6 md:p-8 rounded-2xl bg-white border border-oxford-200/90 shadow-subtle hover:shadow-lift transition-all">
+                            <span class="inline-block px-2.5 py-1 rounded bg-red-100 text-red-700 font-mono text-xs font-bold mb-3">STEP 01</span>
+                            <h3 class="font-serif text-xl sm:text-2xl font-bold text-oxford-950 mb-2">Curated Collegiate Media Stream</h3>
+                            <p class="text-xs sm:text-sm text-oxford-600 leading-relaxed">
+                                Search university channels, conference talks, and specialized course playlists. Watch inline without autoplay or algorithmic distractions, using our integrated lecture scratchpad with real-time markdown formatting.
                             </p>
                         </div>
 
-                        <div class="split-story-card card-lift bg-white p-6 rounded-xl border border-oxford-200/90 shadow-subtle space-y-3">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-openalex-light text-openalex-dark border border-teal-200">Stage 02</span>
-                                <h3 class="font-serif text-lg font-bold text-oxford-950">Live Open-Access Literature &amp; Citation Suite</h3>
-                            </div>
-                            <p class="text-xs sm:text-sm text-oxford-700 leading-relaxed">
-                                Back your term papers and lab reports with real peer-reviewed literature from OpenAlex, Semantic Scholar, and ScienceDirect—complete with open-access PDF links and instant APA 7th, MLA 9th, Chicago, and BibTeX exports.
+                        <div class="p-6 md:p-8 rounded-2xl bg-white border border-oxford-200/90 shadow-subtle hover:shadow-lift transition-all">
+                            <span class="inline-block px-2.5 py-1 rounded bg-teal-100 text-teal-800 font-mono text-xs font-bold mb-3">STEP 02</span>
+                            <h3 class="font-serif text-xl sm:text-2xl font-bold text-oxford-950 mb-2">Multi-Corpus Scholarly Synthesis</h3>
+                            <p class="text-xs sm:text-sm text-oxford-600 leading-relaxed">
+                                Simultaneously query 250M+ open access publications from OpenAlex, STEM preprints on arXiv, medical literature on PubMed, citation graphs on Semantic Scholar, and registered DOIs on Crossref with scholarly prioritization.
                             </p>
                         </div>
 
-                        <div class="split-story-card card-lift bg-white p-6 rounded-xl border border-oxford-200/90 shadow-subtle space-y-3">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded text-xs font-bold bg-evergreen-light text-evergreen-dark border border-emerald-200">Stage 03</span>
-                                <h3 class="font-serif text-lg font-bold text-oxford-950">Persistent Peer Notes &amp; Study Discussions</h3>
-                            </div>
-                            <p class="text-xs sm:text-sm text-oxford-700 leading-relaxed">
-                                Textbooks don't always explain the midterm trick. Deposit handwritten study notes, inspect diagrams with pan-and-zoom controls, discuss edge cases with classmates, and save your reading list permanently in SQLite.
+                        <div class="p-6 md:p-8 rounded-2xl bg-white border border-oxford-200/90 shadow-subtle hover:shadow-lift transition-all">
+                            <span class="inline-block px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-mono text-xs font-bold mb-3">STEP 03</span>
+                            <h3 class="font-serif text-xl sm:text-2xl font-bold text-oxford-950 mb-2">Persistent Peer Contributions</h3>
+                            <p class="text-xs sm:text-sm text-oxford-600 leading-relaxed">
+                                Bookmark sources to your local client session and contribute your own course notes, cheat sheets, or recommended links to the shared student archive with full community upvoting and peer discussion.
                             </p>
                         </div>
                     </div>
@@ -247,21 +341,12 @@
             </div>
         }
     </section>
+
+    <!-- Modals -->
+    <VideoPlayerModal Item="activeVideoItem" OnClose="CloseVideoModal" />
+    <PdfViewerModal Item="activePdfItem" OnClose="ClosePdfModal" />
+    <CitationModal Item="activeCitationItem" OnClose="CloseCitationModal" />
 </div>
-
-<!-- In-App Lecture Theater Modal -->
-<VideoPlayerModal Item="@activeVideoItem"
-                  OnClose="CloseVideoModal"
-                  OnOpenCitation="OpenCitationModal" />
-
-<!-- In-App Distraction-Free PDF Reader Modal -->
-<PdfViewerModal Item="@activePdfItem"
-                OnClose="ClosePdfModal"
-                OnOpenCitation="OpenCitationModal" />
-
-<!-- Multi-Style Academic Citation Modal -->
-<CitationModal Item="@activeCitationItem"
-               OnClose="CloseCitationModal" />
 
 @code {
     private SearchQuery searchQuery = new();
@@ -271,9 +356,21 @@
     private bool isLoading = false;
     private bool isLoadingMore = false;
     private int currentPage = 1;
+
+    private ResourceCategory currentCategory = ResourceCategory.All;
+    private DateRangeFilter currentDateRange = DateRangeFilter.AnyTime;
+    private bool isOpenAccessOnly = false;
+    private string currentSortBy = "scholarly";
+
     private SourceItem? activeVideoItem;
     private SourceItem? activePdfItem;
     private SourceItem? activeCitationItem;
+
+    private bool HasActiveFilters =>
+        currentCategory != ResourceCategory.All ||
+        currentDateRange != DateRangeFilter.AnyTime ||
+        isOpenAccessOnly ||
+        currentSortBy != "scholarly";
 
     protected override async Task OnInitializedAsync()
     {
@@ -310,7 +407,10 @@
             QueryText = query.QueryText,
             Field = query.Field,
             Platform = query.Platform,
-            SortBy = query.SortBy,
+            Category = currentCategory,
+            DateRange = currentDateRange,
+            OpenAccessOnly = isOpenAccessOnly,
+            SortBy = currentSortBy,
             PageNumber = 1
         };
         StateHasChanged();
@@ -322,6 +422,93 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task FilterByCategory(ResourceCategory category)
+    {
+        if (currentCategory == category) return;
+        currentCategory = category;
+
+        if (currentQuery != null)
+        {
+            currentQuery.Category = currentCategory;
+            currentQuery.PageNumber = 1;
+            currentPage = 1;
+            await ReExecuteSearch();
+        }
+    }
+
+    private async Task ToggleOpenAccessPdf()
+    {
+        isOpenAccessOnly = !isOpenAccessOnly;
+        if (currentQuery != null)
+        {
+            currentQuery.OpenAccessOnly = isOpenAccessOnly;
+            currentQuery.PageNumber = 1;
+            currentPage = 1;
+            await ReExecuteSearch();
+        }
+    }
+
+    private async Task FilterByDateRange(DateRangeFilter range)
+    {
+        if (currentDateRange == range) return;
+        currentDateRange = range;
+        if (currentQuery != null)
+        {
+            currentQuery.DateRange = currentDateRange;
+            currentQuery.PageNumber = 1;
+            currentPage = 1;
+            await ReExecuteSearch();
+        }
+    }
+
+    private async Task OnSortChanged(ChangeEventArgs e)
+    {
+        currentSortBy = e.Value?.ToString() ?? "scholarly";
+        if (currentQuery != null)
+        {
+            currentQuery.SortBy = currentSortBy;
+            currentQuery.PageNumber = 1;
+            currentPage = 1;
+            await ReExecuteSearch();
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        currentCategory = ResourceCategory.All;
+        currentDateRange = DateRangeFilter.AnyTime;
+        isOpenAccessOnly = false;
+        currentSortBy = "scholarly";
+
+        if (currentQuery != null)
+        {
+            currentQuery.Category = ResourceCategory.All;
+            currentQuery.DateRange = DateRangeFilter.AnyTime;
+            currentQuery.OpenAccessOnly = false;
+            currentQuery.SortBy = "scholarly";
+            currentQuery.PageNumber = 1;
+            currentPage = 1;
+            await ReExecuteSearch();
+        }
+    }
+
+    private async Task ReExecuteSearch()
+    {
+        if (currentQuery == null) return;
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            response = await AggregatorService.AggregateSearchAsync(currentQuery);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -346,6 +533,10 @@
                 {
                     response.CountByPlatform[kvp.Key] = response.CountByPlatform.GetValueOrDefault(kvp.Key) + kvp.Value;
                 }
+
+                response.PapersCount += next.PapersCount;
+                response.VideosCount += next.VideosCount;
+                response.NotesCount += next.NotesCount;
 
                 response.HasMore = newItems.Count > 0 && next.HasMore;
             }

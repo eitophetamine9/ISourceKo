@@ -10,4 +10,5 @@ public interface IBookmarkService
     bool IsBookmarked(string id);
     void ToggleBookmark(SourceItem item);
     void RemoveBookmark(string id);
+    Task<BookmarkImportResult> ImportBookmarksAsync(IEnumerable<SourceItem> items, bool replaceExisting = false);
 }

@@ -63,7 +63,12 @@ public class SupabaseSubmissionService : IStudentSubmissionService
 
                 if (response.Models != null && response.Models.Count > 0)
                 {
-                    var items = response.Models.Select(m => m.ToDomainModel());
+                    var items = response.Models.Select(m =>
+                    {
+                        var domain = m.ToDomainModel();
+                        StudyNoteGeneratorService.EnsureHydrated(domain);
+                        return domain;
+                    });
 
                     if (!string.IsNullOrWhiteSpace(query))
                     {
@@ -103,7 +108,9 @@ public class SupabaseSubmissionService : IStudentSubmissionService
 
                 if (response != null)
                 {
-                    return response.ToDomainModel();
+                    var domain = response.ToDomainModel();
+                    StudyNoteGeneratorService.EnsureHydrated(domain);
+                    return domain;
                 }
             }
             catch (Exception ex)
@@ -139,12 +146,33 @@ public class SupabaseSubmissionService : IStudentSubmissionService
                 if (created != null)
                 {
                     _logger.LogInformation("Created submission in Supabase with Id {Id}", created.Id);
-                    return created.ToDomainModel();
+                    var domain = created.ToDomainModel();
+                    StudyNoteGeneratorService.EnsureHydrated(domain);
+                    return domain;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to insert into Supabase; writing to SQLite.");
+                _logger.LogWarning(ex, "Primary Supabase insert failed; attempting legacy column fallback.");
+                try
+                {
+                    var legacyModel = StudentSubmissionLegacyModel.FromDomainModel(submission);
+                    var legacyResponse = await _supabaseClient
+                        .From<StudentSubmissionLegacyModel>()
+                        .Insert(legacyModel);
+
+                    var createdLegacy = legacyResponse.Models.FirstOrDefault();
+                    if (createdLegacy != null)
+                    {
+                        submission.Id = createdLegacy.Id.ToString();
+                        submission.SubmittedAt = createdLegacy.CreatedAt;
+                        return submission;
+                    }
+                }
+                catch (Exception legacyEx)
+                {
+                    _logger.LogWarning(legacyEx, "Failed to insert into Supabase; writing to SQLite.");
+                }
             }
         }
 
@@ -163,6 +191,8 @@ public class SupabaseSubmissionService : IStudentSubmissionService
             Type = submission.Type,
             SourceUrl = submission.SourceUrl,
             ImagePath = submission.ImagePath,
+            NoteContent = submission.NoteContent,
+            IsSystemGenerated = submission.IsSystemGenerated,
             StudentName = submission.StudentName,
             SchoolOrProgram = submission.SchoolOrProgram,
             SubmittedAt = submission.SubmittedAt,
@@ -365,7 +395,7 @@ public class SupabaseSubmissionService : IStudentSubmissionService
         }
         catch { }
 
-        return new StudentSubmission
+        var domain = new StudentSubmission
         {
             Id = entity.Id,
             Title = entity.Title,
@@ -374,6 +404,8 @@ public class SupabaseSubmissionService : IStudentSubmissionService
             Type = entity.Type,
             SourceUrl = entity.SourceUrl,
             ImagePath = entity.ImagePath,
+            NoteContent = entity.NoteContent,
+            IsSystemGenerated = entity.IsSystemGenerated,
             StudentName = entity.StudentName,
             SchoolOrProgram = entity.SchoolOrProgram,
             SubmittedAt = entity.SubmittedAt,
@@ -387,5 +419,7 @@ public class SupabaseSubmissionService : IStudentSubmissionService
                 CreatedAt = c.CreatedAt
             }).ToList()
         };
+        StudyNoteGeneratorService.EnsureHydrated(domain);
+        return domain;
     }
 }

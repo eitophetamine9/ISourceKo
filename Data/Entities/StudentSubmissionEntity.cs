@@ -27,6 +27,10 @@ public class StudentSubmissionEntity
     [MaxLength(1024)]
     public string? ImagePath { get; set; }
 
+    public string? NoteContent { get; set; }
+
+    public bool IsSystemGenerated { get; set; } = false;
+
     [Required]
     [MaxLength(50)]
     public string StudentName { get; set; } = "Anonymous Student";

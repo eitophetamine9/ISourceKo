@@ -23,19 +23,31 @@ public static class DatabaseInitializer
         else
         {
             await EnsureBookmarkClientColumnsAsync(db, logger);
+            await EnsureSubmissionNoteColumnsAsync(db, logger);
         }
 
         // Ensure SearchQueryLogs table exists and baseline dynamic analytics are seeded
         await EnsureSearchQueryLogsTableAsync(db, logger);
 
         // Seed initial high-yield student notes across all 37 disciplines
-        var existingIds = await db.StudentSubmissions
+        var existingSubmissions = await db.StudentSubmissions.ToListAsync();
+        var existingSet = existingSubmissions
             .Select(s => s.Id)
-            .ToListAsync();
-
-        var existingSet = existingIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var starterSubmissions = BuildStarterSubmissions();
+        foreach (var starter in starterSubmissions)
+        {
+            starter.IsSystemGenerated = true;
+            var tags = new List<string>();
+            try { tags = JsonSerializer.Deserialize<List<string>>(starter.TagsJson) ?? new(); } catch { }
+            starter.NoteContent = ISourceKO.Services.StudyNoteGeneratorService.GenerateStructuredNote(
+                starter.Title,
+                starter.Description,
+                starter.Field,
+                tags);
+        }
+
         var missingSubmissions = starterSubmissions
             .Where(s => !existingSet.Contains(s.Id))
             .ToList();
@@ -45,6 +57,65 @@ public static class DatabaseInitializer
             db.StudentSubmissions.AddRange(missingSubmissions);
             await db.SaveChangesAsync();
             logger.LogInformation("Seeded {Count} high-yield student notes across 37 disciplines into SQLite.", missingSubmissions.Count);
+        }
+
+        // Upgrade pre-v2.1 starter rows in SQLite with generated NoteContent and IsSystemGenerated flag
+        var starterLookup = starterSubmissions.ToDictionary(s => s.Id, StringComparer.OrdinalIgnoreCase);
+        bool upgradedExisting = false;
+        foreach (var existing in existingSubmissions)
+        {
+            if (starterLookup.TryGetValue(existing.Id, out var template) &&
+                (!existing.IsSystemGenerated || string.IsNullOrWhiteSpace(existing.NoteContent)))
+            {
+                existing.IsSystemGenerated = true;
+                existing.NoteContent = template.NoteContent;
+                upgradedExisting = true;
+            }
+        }
+
+        if (upgradedExisting)
+        {
+            await db.SaveChangesAsync();
+            logger.LogInformation("Hydrated existing starter submissions in SQLite with generated study notes.");
+        }
+    }
+
+    private static async Task EnsureSubmissionNoteColumnsAsync(AppDbContext db, ILogger logger)
+    {
+        var conn = db.Database.GetDbConnection();
+        var shouldClose = conn.State != System.Data.ConnectionState.Open;
+        if (shouldClose) await conn.OpenAsync();
+
+        try
+        {
+            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA table_info(\"StudentSubmissions\");";
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    columns.Add(reader.GetString(1));
+                }
+            }
+
+            if (!columns.Contains("NoteContent"))
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"StudentSubmissions\" ADD COLUMN \"NoteContent\" TEXT;");
+                logger.LogInformation("Upgraded StudentSubmissions table with NoteContent column.");
+            }
+
+            if (!columns.Contains("IsSystemGenerated"))
+            {
+                await db.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"StudentSubmissions\" ADD COLUMN \"IsSystemGenerated\" INTEGER NOT NULL DEFAULT 0;");
+                logger.LogInformation("Upgraded StudentSubmissions table with IsSystemGenerated column.");
+            }
+        }
+        finally
+        {
+            if (shouldClose) await conn.CloseAsync();
         }
     }
 

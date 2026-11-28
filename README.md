@@ -44,13 +44,33 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 
 ## Release Notes & Patch History
 
-### Version 2.0.3 Patch Notes
+### Version 2.1 Patch Notes
 
 > [!NOTE]
-> Version 2.0.3 upgrades the persistence layer to Supabase (PostgreSQL + Postgrest REST Data API) in compliance with the Part VI Project Milestone. Introduces full cloud CRUD, database-level active filtering, performance indexing, and soft-delete storage mechanics.
+> Version 2.1 introduces portable JSON backup export/import for saved bookmarks and lecture scratchpad notes, replaces hardcoded starter blurbs with dynamically structured discipline study notes, and adds explicit origin badges distinguishing System Premade notes from Peer-Made student contributions.
+
+- **Portable JSON Syllabus Backup & Sharing (`/bookmarks`)**:
+  - Added **Export JSON** (`isourceko-syllabus-YYYY-MM-DD.json`) to bundle saved sources (`SourceItem`) together with all browser-saved YouTube lecture scratchpad notes (`VideoNotes`) into a single portable file.
+  - Added **Import JSON** upload support on both the Saved Sources header and empty-state screen, allowing users to restore backups after clearing browser cache, migrate across browsers/devices, or share curated reading lists with classmates.
+  - Added an interactive **Import Preview** card displaying source and note counts with **Merge (skip duplicates)** or **Replace current list** options.
+- **Generated Study Notes & In-App Study Sheet Reader (`/community`)**:
+  - Replaced short placeholder descriptions with `StudyNoteGeneratorService`, generating structured, discipline-specific study notes (key equations, comparative tables, lab/clinical protocols, exam pitfalls, and active recall checkpoints) across all 37 academic disciplines.
+  - Added `StudyNoteModal` (**Read Note** trigger) providing a distraction-free reader with Copy and Markdown (`.md`) download actions.
+  - Added **Written Study Note** (`TextNote`) as a first-class deposit format on `/submit` with 1-click starter templates (*Formula & Equation Sheet*, *Concept Comparison Matrix*, *Lab / Clinical Protocol*).
+- **Explicit Provenance Badges (System Premade vs. Made by Peer)**:
+  - Added `note_content` and `is_system_generated` columns across SQLite (`StudentSubmissions`), Supabase (`student_submissions`), and domain models.
+  - Every card in `/community` and Search Hub now displays an explicit origin badge: **System Premade** for system-generated starter notes vs. **Made by Peer** for student-contributed submissions.
+  - Added a **Note Origin** filter rail in `/community` (*All Sources*, *Made by Peers Only*, *System Premade Only*).
+
+---
+
+### Previous Version Archives
+
+<details>
+<summary><strong>Version 2.0.3 Patch Notes</strong></summary>
 
 - **Supabase Cloud Database Integration**:
-  - Connected the Student Exchange archive to a high-availability PostgreSQL database on Supabase in Southeast Asia (Singapore).
+  - Connected the Student Exchange archive to a high-availability PostgreSQL database on Supabase.
   - Maintained multi-tiered architecture: C# client communicating with Supabase Data API (`GET`, `POST`, `PATCH`) with seamless local SQLite fallback for resilient offline execution.
 - **Full Cloud CRUD & Fast Habits**:
   - **Create**: Student notes deposited via `/submit` send `POST /rest/v1/student_submissions` with the action button disabled while saving to ensure idempotency.
@@ -64,9 +84,7 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
 - **Security & Row Level Security (RLS)**:
   - Structured `database/schema.sql` with two locks: `GRANT` to anon role and explicit RLS policies (`read_active_notes`, `insert_note`, `update_note`).
 
----
-
-### Previous Version Archives
+</details>
 
 <details>
 <summary><strong>Version 2.0.2 Patch Notes</strong></summary>
@@ -126,7 +144,10 @@ In ISourceKO, peer-submitted study guides, formula sheets, and reaction diagrams
 
 ---
 
-## Core Capabilities (v2.0.3)
+## Core Capabilities (v2.1)
+
+- **Portable JSON Save Files (Export & Import)**:
+  - One-click export of saved bookmarks and YouTube lecture scratchpad notes into a portable `.json` archive that prevents browser cache data loss and simplifies sharing study packs with classmates.
 
 - **Cloud Database Persistence with Supabase & Postgrest**:
   - Full CRUD lifecycle (Create, Read, Update upvotes, Soft Delete) powered by a high-availability PostgreSQL database in Southeast Asia (Singapore).
@@ -201,7 +222,8 @@ ISourceKo/
 │   └── Shared/                             # Reusable UI components
 │       ├── SearchBar.razor                 # Search desk with segmented corpus toggles & trending chips
 │       ├── SourceCard.razor                # Heterogeneous card (Academic dossier + Video theater trigger)
-│       ├── StudentSourceCard.razor         # Peer card with zoom preview, comments thread & upvote guard
+│       ├── StudentSourceCard.razor         # Peer/System note card with origin badge, reader modal & upvote guard
+│       ├── StudyNoteModal.razor            # Distraction-free reader for full study notes & .md download
 │       ├── VideoPlayerModal.razor          # Distraction-free YouTube theater modal with lecture scratchpad
 │       ├── CitationModal.razor             # APA 7th / MLA 9th / Chicago 17th / BibTeX generator & .bib export
 │       ├── ImageModal.razor                # Zoomable, pannable & rotatable note darkroom inspector
@@ -220,8 +242,9 @@ ISourceKo/
 ├── Models/                                 # Domain Entities & DTOs
 │   ├── Enums/
 │   │   ├── SourcePlatform.cs               # YouTube, OpenAlex, ScienceDirect, SemanticScholar, Community
-│   │   ├── SubmissionType.cs               # Link, ImageNote, Document
+│   │   ├── SubmissionType.cs               # Link, ImageNote, Document, TextNote
 │   │   └── AcademicField.cs                # CS, Medicine, Engineering, Natural Sciences, etc.
+│   ├── BookmarkBackupBundle.cs             # Portable JSON backup DTO for saved sources & video notes
 │   ├── SourceItem.cs                       # Normalized entity representing a source across platforms
 │   ├── StudentSubmission.cs                # Student-submitted notes/photos/links & comments model
 │   ├── SearchQuery.cs                      # Search filter criteria (query, platform, field, sort)
@@ -243,6 +266,7 @@ ISourceKo/
 │   ├── CitationFormatter.cs                # Pure formatter for APA 7th, MLA 9th, Chicago 17th & BibTeX
 │   ├── SourceAggregatorService.cs          # Concurrent fan-out & balanced provider interleaving
 │   ├── StudentSubmissionService.cs         # EF Core SQLite repository for student archive
+│   ├── StudyNoteGeneratorService.cs        # Generates structured study sheets & submission templates
 │   ├── LocalFileStorageService.cs          # Stores student photos in wwwroot/uploads/
 │   └── BookmarkService.cs                  # Write-through cached SQLite bookmark service
 │

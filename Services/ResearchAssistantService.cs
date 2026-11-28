@@ -65,7 +65,7 @@ public class ResearchAssistantService : IResearchAssistantService
 
         ModelName = Environment.GetEnvironmentVariable("AI__Model")
             ?? configuration["AI:Model"]
-            ?? "llama-3.3-70b-versatile";
+            ?? "openai/gpt-oss-120b";
 
         _endpoint = Environment.GetEnvironmentVariable("AI__Endpoint")
             ?? configuration["AI:Endpoint"]
@@ -129,7 +129,7 @@ public class ResearchAssistantService : IResearchAssistantService
             {
                 model = ModelName,
                 temperature = 0.2,
-                max_tokens = 900,
+                max_tokens = 2048,
                 messages = new[]
                 {
                     new { role = "system", content = systemInstruction },

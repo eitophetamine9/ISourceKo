@@ -11,4 +11,5 @@ public interface IBookmarkService
     void ToggleBookmark(SourceItem item);
     void RemoveBookmark(string id);
     Task<BookmarkImportResult> ImportBookmarksAsync(IEnumerable<SourceItem> items, bool replaceExisting = false);
+    Task ClearAllBookmarksAsync();
 }

@@ -59,8 +59,18 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
   - Added **Written Study Note** (`TextNote`) as a first-class deposit format on `/submit` with 1-click starter templates (*Formula & Equation Sheet*, *Concept Comparison Matrix*, *Lab / Clinical Protocol*).
 - **Explicit Provenance Badges (System Premade vs. Made by Peer)**:
   - Added `note_content` and `is_system_generated` columns across SQLite (`StudentSubmissions`), Supabase (`student_submissions`), and domain models.
-  - Every card in `/community` and Search Hub now displays an explicit origin badge: **System Premade** for system-generated starter notes vs. **Made by Peer** for student-contributed submissions.
+  - Every card in `/community` and Search Hub now displays an explicit origin badge: **System Premade** (attributed to **ISource Gen**) vs. **Made by Peer** for student-contributed submissions.
   - Added a **Note Origin** filter rail in `/community` (*All Sources*, *Made by Peers Only*, *System Premade Only*).
+- **Cloud Peer Comments, Deep-Linking & Clear All**:
+  - Added `public.student_comments` in `database/schema.sql` and batched comment retrieval/insertion in `SupabaseSubmissionService` with SQLite fallback.
+  - Wired **Read Note** in-place (`StudyNoteModal`) directly from Search Hub (`/`) and Saved Sources (`/bookmarks`), plus shareable `/community?note=<id>` deep-links and a guarded **Clear All** bookmarks action.
+- **12 Live Academic & Media Providers (`DOAJ`, `EuropePMC`, `ERIC`, `HAL`)**:
+  - Added four keyless, peer-reviewed citable providers alongside OpenAlex, arXiv, PubMed, Crossref, Semantic Scholar, ScienceDirect, YouTube, and Student Community.
+- **Source-Grounded Research Assistant (Free Model + 5-Layer Prompt Security)**:
+  - Added **Ask Sources (AI)** on `/` and **Ask Syllabus (AI)** on `/bookmarks` using an OpenAI-compatible free-tier model (`AI__Provider`, `AI__Model`, `AI__Endpoint`, `AI__ApiKey`) with zero app-side rate limiting.
+  - Protected by `PromptSecurityGuard` (input sanitization & injection-pattern blocking, XML untrusted-data sandboxing for both user prompts and external abstracts, strict `system`/`user` role separation, XSS-safe output validation, and server-side key isolation).
+- **Automated Unit Test Suite (`ISourceKO.Tests`)**:
+  - Added xUnit tests covering `CitationFormatter`, `StudyNoteGeneratorService`, `BookmarkService`, and `PromptSecurityGuard`.
 
 ---
 
@@ -224,6 +234,7 @@ ISourceKo/
 │       ├── SourceCard.razor                # Heterogeneous card (Academic dossier + Video theater trigger)
 │       ├── StudentSourceCard.razor         # Peer/System note card with origin badge, reader modal & upvote guard
 │       ├── StudyNoteModal.razor            # Distraction-free reader for full study notes & .md download
+│       ├── ResearchAssistantModal.razor    # Source-grounded AI synthesis modal with citation chips
 │       ├── VideoPlayerModal.razor          # Distraction-free YouTube theater modal with lecture scratchpad
 │       ├── CitationModal.razor             # APA 7th / MLA 9th / Chicago 17th / BibTeX generator & .bib export
 │       ├── ImageModal.razor                # Zoomable, pannable & rotatable note darkroom inspector

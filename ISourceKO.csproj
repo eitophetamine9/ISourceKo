@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <Version>2.0.1</Version>
+    <Version>2.1.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <DefaultItemExcludes>$(DefaultItemExcludes);ISourceKO.Tests\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

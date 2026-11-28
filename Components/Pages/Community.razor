@@ -177,6 +177,9 @@
 <StudyNoteModal Note="@activeModalNote" OnClose="CloseNoteModal" />
 
 @code {
+    [SupplyParameterFromQuery(Name = "note")]
+    public string? NoteIdQuery { get; set; }
+
     private List<StudentSubmission> submissions = new();
     private string filterQuery = string.Empty;
     private SubmissionType? selectedType = null;
@@ -186,6 +189,7 @@
     private bool isLoading = true;
     private string? activeModalImage;
     private StudentSubmission? activeModalNote;
+    private string? handledNoteQuery;
 
     private IEnumerable<StudentSubmission> VisibleSubmissions => originFilter switch
     {
@@ -197,6 +201,24 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadSubmissions();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(NoteIdQuery) &&
+            !string.Equals(handledNoteQuery, NoteIdQuery, StringComparison.OrdinalIgnoreCase))
+        {
+            handledNoteQuery = NoteIdQuery;
+            var match = submissions.FirstOrDefault(s => string.Equals(s.Id, NoteIdQuery, StringComparison.OrdinalIgnoreCase));
+            if (match == null)
+            {
+                match = await SubmissionService.GetByIdAsync(NoteIdQuery);
+            }
+            if (match != null)
+            {
+                activeModalNote = match;
+            }
+        }
     }
 
     private async Task LoadSubmissions()

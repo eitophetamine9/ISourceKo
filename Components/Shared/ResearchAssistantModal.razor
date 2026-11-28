@@ -1,0 +1,208 @@
+@using ISourceKO.Models
+@using ISourceKO.Services.Interfaces
+@inject IResearchAssistantService AssistantService
+@inject IJSRuntime JS
+
+@if (IsOpen)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-oxford-950/80 backdrop-blur-sm animate-fade-in"
+         data-lenis-prevent
+         @onclick="Close">
+        <div class="relative w-full max-w-3xl max-h-[90vh] bg-bone text-oxford-950 rounded-xl overflow-hidden shadow-pop border border-oxford-300 flex flex-col animate-scale-in"
+             data-lenis-prevent
+             @onclick:stopPropagation="true">
+
+            <!-- Header -->
+            <div class="px-6 py-4 bg-white border-b border-oxford-200 flex items-start justify-between gap-4">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-oxford-950 text-bone">
+                            Source-Grounded AI
+                        </span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-oxford-50 text-oxford-700 border border-oxford-200">
+                            @AssistantService.ProviderName • @AssistantService.ModelName
+                        </span>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-evergreen-light text-evergreen-dark border border-emerald-200">
+                            @(Math.Min(Sources.Count, 10)) Sources Grounded
+                        </span>
+                    </div>
+                    <h3 class="font-serif text-lg sm:text-xl font-bold text-oxford-950">
+                        Ask Retrieved Sources
+                    </h3>
+                    <p class="text-xs text-oxford-500 mt-0.5">
+                        Answers are synthesized strictly from the retrieved papers and study notes on screen with inline [N] citations.
+                    </p>
+                </div>
+
+                <button type="button"
+                        @onclick="Close"
+                        aria-label="Close research assistant"
+                        class="btn-press p-1.5 rounded text-oxford-400 hover:text-oxford-900 hover:bg-oxford-100 transition-colors shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto overscroll-contain p-6 space-y-4" data-lenis-prevent>
+                @if (!AssistantService.IsConfigured)
+                {
+                    <div class="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
+                        <p class="font-bold mb-1">Free-Tier AI Model Not Configured</p>
+                        <p>
+                            To activate the source-grounded assistant, set <code class="font-mono bg-white px-1 py-0.5 rounded border border-amber-200">AI__ApiKey</code> in your environment variables
+                            (for example, a free Groq or OpenRouter API key). Zero app-side rate limits are enforced.
+                        </p>
+                    </div>
+                }
+
+                <!-- Quick Starter Prompts -->
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[11px] font-bold text-oxford-500 uppercase tracking-wider mr-1">Quick Prompts:</span>
+                    @foreach (var prompt in QuickPrompts)
+                    {
+                        <button type="button"
+                                @onclick="() => RunQuickPrompt(prompt)"
+                                disabled="@isThinking"
+                                class="btn-press px-2.5 py-1 rounded bg-white hover:bg-oxford-950 text-oxford-800 hover:text-bone border border-oxford-200 text-[11px] font-semibold transition-colors disabled:opacity-50">
+                            @prompt
+                        </button>
+                    }
+                </div>
+
+                <!-- Question Form -->
+                <form @onsubmit="SubmitQuestion" class="flex flex-col sm:flex-row gap-2">
+                    <input @bind="questionText"
+                           type="text"
+                           maxlength="1000"
+                           placeholder="Ask a question grounded in these sources (max 1000 chars)..."
+                           class="flex-1 px-3 py-2 bg-white border border-oxford-300 rounded text-xs text-oxford-950 focus:outline-none focus:ring-2 focus:ring-oxford-950" />
+                    <button type="submit"
+                            disabled="@(isThinking || string.IsNullOrWhiteSpace(questionText))"
+                            class="btn-flame px-4 py-2 rounded text-xs font-bold text-white shadow-subtle disabled:opacity-50 shrink-0">
+                        @(isThinking ? "Synthesizing..." : "Ask Sources")
+                    </button>
+                </form>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs">
+                        @errorMessage
+                    </div>
+                }
+
+                @if (lastResponse != null && lastResponse.Success)
+                {
+                    <div class="p-4 rounded-lg bg-white border border-oxford-200 shadow-subtle space-y-3">
+                        <div class="flex items-center justify-between border-b border-oxford-100 pb-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-oxford-500">Grounded Synthesis</span>
+                            <button type="button"
+                                    @onclick="CopyAnswer"
+                                    class="btn-press px-2.5 py-1 rounded border border-oxford-200 text-[11px] font-semibold text-oxford-700 hover:bg-oxford-50">
+                                @(isCopied ? "Copied!" : "Copy Answer")
+                            </button>
+                        </div>
+
+                        <div class="text-xs sm:text-sm text-oxford-900 leading-relaxed whitespace-pre-line">
+                            @lastResponse.Answer
+                        </div>
+
+                        @if (lastResponse.CitedSourceIndices.Any())
+                        {
+                            <div class="pt-3 border-t border-oxford-100 space-y-1.5">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-oxford-500">Cited References</p>
+                                @foreach (var idx in lastResponse.CitedSourceIndices)
+                                {
+                                    @if (idx >= 1 && idx <= Sources.Count)
+                                    {
+                                        var src = Sources[idx - 1];
+                                        <div class="text-xs text-oxford-700 flex items-start gap-2">
+                                            <span class="font-mono font-bold text-flame shrink-0">[@idx]</span>
+                                            <a href="@src.Url" target="_blank" rel="noopener noreferrer" class="hover:underline text-oxford-900 font-medium">
+                                                @src.Title
+                                            </a>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public IReadOnlyList<SourceItem> Sources { get; set; } = Array.Empty<SourceItem>();
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string questionText = string.Empty;
+    private bool isThinking = false;
+    private bool isCopied = false;
+    private string? errorMessage;
+    private ResearchAssistantResponse? lastResponse;
+
+    private static readonly string[] QuickPrompts =
+    {
+        "Synthesize key findings across these sources",
+        "Compare methodologies and limitations",
+        "Draft a structured study note outline"
+    };
+
+    private async Task RunQuickPrompt(string prompt)
+    {
+        questionText = prompt;
+        await SubmitQuestion();
+    }
+
+    private async Task SubmitQuestion()
+    {
+        if (isThinking || string.IsNullOrWhiteSpace(questionText)) return;
+        isThinking = true;
+        errorMessage = null;
+        lastResponse = null;
+
+        try
+        {
+            var resp = await AssistantService.AskSourcesAsync(questionText, Sources);
+            if (resp.Success)
+            {
+                lastResponse = resp;
+            }
+            else
+            {
+                errorMessage = resp.ErrorMessage ?? "Could not generate a response.";
+            }
+        }
+        finally
+        {
+            isThinking = false;
+        }
+    }
+
+    private async Task CopyAnswer()
+    {
+        if (lastResponse == null || string.IsNullOrWhiteSpace(lastResponse.Answer)) return;
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", lastResponse.Answer);
+            isCopied = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            isCopied = false;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

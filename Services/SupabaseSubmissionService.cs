@@ -63,9 +63,16 @@ public class SupabaseSubmissionService : IStudentSubmissionService
 
                 if (response.Models != null && response.Models.Count > 0)
                 {
+                    var commentLookup = await LoadSupabaseCommentsBySubmissionIdsAsync(
+                        response.Models.Select(m => m.Id).ToList());
+
                     var items = response.Models.Select(m =>
                     {
                         var domain = m.ToDomainModel();
+                        if (commentLookup.TryGetValue(m.Id, out var comments))
+                        {
+                            domain.Comments = comments;
+                        }
                         StudyNoteGeneratorService.EnsureHydrated(domain);
                         return domain;
                     });
@@ -109,6 +116,11 @@ public class SupabaseSubmissionService : IStudentSubmissionService
                 if (response != null)
                 {
                     var domain = response.ToDomainModel();
+                    var commentLookup = await LoadSupabaseCommentsBySubmissionIdsAsync(new List<long> { response.Id });
+                    if (commentLookup.TryGetValue(response.Id, out var comments))
+                    {
+                        domain.Comments = comments;
+                    }
                     StudyNoteGeneratorService.EnsureHydrated(domain);
                     return domain;
                 }
@@ -328,18 +340,81 @@ public class SupabaseSubmissionService : IStudentSubmissionService
 
     public async Task<bool> AddCommentAsync(string submissionId, string author, string text)
     {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+
+        var cleanAuthor = string.IsNullOrWhiteSpace(author) ? "Fellow Student" : author.Trim();
+        var cleanText = text.Trim();
+
+        if (_supabaseClient != null && long.TryParse(submissionId, out var numericId))
+        {
+            try
+            {
+                var model = new StudentCommentModel
+                {
+                    SubmissionId = numericId,
+                    AuthorName = cleanAuthor,
+                    Content = cleanText,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                var response = await _supabaseClient
+                    .From<StudentCommentModel>()
+                    .Insert(model);
+
+                if (response.Models.Count > 0)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to insert comment into Supabase; falling back to SQLite.");
+            }
+        }
+
         await using var db = await _dbFactory.CreateDbContextAsync();
         var comment = new Data.Entities.StudentCommentEntity
         {
             Id = Guid.NewGuid().ToString("N"),
             SubmissionId = submissionId,
-            AuthorName = string.IsNullOrWhiteSpace(author) ? "Fellow Student" : author.Trim(),
-            Content = text.Trim(),
+            AuthorName = cleanAuthor,
+            Content = cleanText,
             CreatedAt = DateTime.UtcNow
         };
         db.StudentComments.Add(comment);
         await db.SaveChangesAsync();
         return true;
+    }
+
+    private async Task<Dictionary<long, List<StudentComment>>> LoadSupabaseCommentsBySubmissionIdsAsync(List<long> submissionIds)
+    {
+        var result = new Dictionary<long, List<StudentComment>>();
+        if (_supabaseClient == null || submissionIds.Count == 0) return result;
+
+        try
+        {
+            var idObjects = submissionIds.Cast<object>().ToList();
+            var response = await _supabaseClient
+                .From<StudentCommentModel>()
+                .Filter("submission_id", Operator.In, idObjects)
+                .Order(c => c.CreatedAt, Ordering.Descending)
+                .Range(0, 199)
+                .Get();
+
+            if (response.Models != null)
+            {
+                foreach (var group in response.Models.GroupBy(c => c.SubmissionId))
+                {
+                    result[group.Key] = group.Select(c => c.ToDomainModel()).ToList();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not load Supabase student_comments (table may not be created yet).");
+        }
+
+        return result;
     }
 
     private async Task<List<StudentSubmission>> GetSubmissionsFromSqliteAsync(

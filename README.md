@@ -33,7 +33,7 @@
   </a>
 </p>
 
-**ISourceKO** is a centralized study and research aggregator designed specifically for university and collegiate students. Instead of searching multiple tabs separately, students enter a topic once and receive consolidated, high-yield results from diverse academic and educational platforms—including **Live OpenAlex Open-Access Works**, **Semantic Scholar Citations**, **ScienceDirect Peer-Reviewed Articles**, and **YouTube Video Lectures**.
+**ISourceKO** is a centralized study and research aggregator designed specifically for university and collegiate students. Instead of searching multiple tabs separately, students enter a topic once and receive consolidated, high-yield results across 12 live academic and educational providers—including **OpenAlex**, **arXiv**, **PubMed**, **Crossref**, **DOAJ**, **Europe PMC**, **ERIC**, **HAL Open Archive**, **Semantic Scholar**, **ScienceDirect**, **YouTube Video Lectures**, and **Student Community Notes**—alongside the source-grounded **AISourceAssistant** research desk.
 
 In addition, ISourceKO features a SQLite-persisted **Peer Exchange Archive** where students deposit handwritten notes, formula cheat sheets, diagrams, or study links with zoomable darkroom inspection, peer discussion comments, and device-guarded upvoting.
 
@@ -66,8 +66,9 @@ Repository: **[https://github.com/eitophetamine9/ISourceKo](https://github.com/e
   - Wired **Read Note** in-place (`StudyNoteModal`) directly from Search Hub (`/`) and Saved Sources (`/bookmarks`), plus shareable `/community?note=<id>` deep-links and a guarded **Clear All** bookmarks action.
 - **12 Live Academic & Media Providers (`DOAJ`, `EuropePMC`, `ERIC`, `HAL`)**:
   - Added four keyless, peer-reviewed citable providers alongside OpenAlex, arXiv, PubMed, Crossref, Semantic Scholar, ScienceDirect, YouTube, and Student Community.
-- **Source-Grounded Research Assistant (Free Model + 5-Layer Prompt Security)**:
-  - Added **Ask Sources (AI)** on `/` and **Ask Syllabus (AI)** on `/bookmarks` using an OpenAI-compatible free-tier model (`AI__Provider`, `AI__Model`, `AI__Endpoint`, `AI__ApiKey`) with zero app-side rate limiting.
+- **AISourceAssistant (Source-Grounded AI Desk + 5-Layer Prompt Security)**:
+  - Added the **AISourceAssistant** slide-over drawer accessible directly on the main page (`/`), in search results, and on Saved Sources (`/bookmarks`), featuring a classic two-sided chat layout (assistant on the left, user on the right), XSS-safe Markdown table/bold/code rendering, and copyable answers.
+  - Supports **Source-Grounded Synthesis** (citing retrieved/saved sources with `[N]`) and **Query Helper Mode** (refining broad topics into scholarly search queries before searching), powered by an OpenAI-compatible free-tier model (`openai/gpt-oss-120b` on Groq via `AI__Provider`, `AI__Model`, `AI__Endpoint`, `AI__ApiKey`) with zero app-side rate limiting.
   - Protected by `PromptSecurityGuard` (input sanitization & injection-pattern blocking, XML untrusted-data sandboxing for both user prompts and external abstracts, strict `system`/`user` role separation, XSS-safe output validation, and server-side key isolation).
 - **Automated Unit Test Suite (`ISourceKO.Tests`)**:
   - Added xUnit tests covering `CitationFormatter`, `StudyNoteGeneratorService`, `BookmarkService`, and `PromptSecurityGuard`.
@@ -234,7 +235,7 @@ ISourceKo/
 │       ├── SourceCard.razor                # Heterogeneous card (Academic dossier + Video theater trigger)
 │       ├── StudentSourceCard.razor         # Peer/System note card with origin badge, reader modal & upvote guard
 │       ├── StudyNoteModal.razor            # Distraction-free reader for full study notes & .md download
-│       ├── ResearchAssistantModal.razor    # Source-grounded AI synthesis modal with citation chips
+│       ├── ResearchAssistantModal.razor    # AISourceAssistant slide-over chat desk with citation chips
 │       ├── VideoPlayerModal.razor          # Distraction-free YouTube theater modal with lecture scratchpad
 │       ├── CitationModal.razor             # APA 7th / MLA 9th / Chicago 17th / BibTeX generator & .bib export
 │       ├── ImageModal.razor                # Zoomable, pannable & rotatable note darkroom inspector
@@ -252,9 +253,13 @@ ISourceKo/
 │
 ├── Models/                                 # Domain Entities & DTOs
 │   ├── Enums/
-│   │   ├── SourcePlatform.cs               # YouTube, OpenAlex, ScienceDirect, SemanticScholar, Community
+│   │   ├── SourcePlatform.cs               # OpenAlex, ArXiv, PubMed, Crossref, DOAJ, EuropePMC, ERIC, HAL, YouTube, etc.
 │   │   ├── SubmissionType.cs               # Link, ImageNote, Document, TextNote
-│   │   └── AcademicField.cs                # CS, Medicine, Engineering, Natural Sciences, etc.
+│   │   └── AcademicField.cs                # 37 collegiate subjects across 6 faculties
+│   ├── Supabase/
+│   │   ├── StudentSubmissionModel.cs       # Postgrest model for student_submissions (+ legacy fallback)
+│   │   ├── StudentCommentModel.cs          # Postgrest model for student_comments
+│   │   └── BookmarkModel.cs                # Postgrest model for bookmarks
 │   ├── BookmarkBackupBundle.cs             # Portable JSON backup DTO for saved sources & video notes
 │   ├── SourceItem.cs                       # Normalized entity representing a source across platforms
 │   ├── StudentSubmission.cs                # Student-submitted notes/photos/links & comments model
@@ -265,21 +270,42 @@ ISourceKo/
 │   ├── Interfaces/
 │   │   ├── ISourceAggregatorService.cs     # Multi-provider concurrent query coordinator
 │   │   ├── ISourceProvider.cs              # Extensible provider contract
-│   │   ├── IStudentSubmissionService.cs    # SQLite-backed student notes, upvotes & comments service
+│   │   ├── IStudentSubmissionService.cs    # Student notes, upvotes, soft-delete & comments contract
 │   │   ├── IFileStorageService.cs          # Handling uploaded pictures of study notes
-│   │   └── IBookmarkService.cs             # SQLite-backed study bookmarks service
+│   │   ├── IBookmarkService.cs             # SQLite-backed study bookmarks & JSON import/export contract
+│   │   └── IResearchAssistantService.cs    # AISourceAssistant synthesis & query-helper contract
 │   ├── Providers/
 │   │   ├── OpenAlexSourceProvider.cs       # Live OpenAlex open-access scholarly works connector
+│   │   ├── ArXivSourceProvider.cs          # Live arXiv STEM preprints & PDF connector
+│   │   ├── PubMedSourceProvider.cs         # Live PubMed / NCBI health sciences connector
+│   │   ├── CrossrefSourceProvider.cs       # Live Crossref DOI metadata connector
+│   │   ├── DoajSourceProvider.cs           # Live DOAJ open-access peer-reviewed journals connector
+│   │   ├── EuropePmcSourceProvider.cs      # Live Europe PMC biomedical & full-text PDF connector
+│   │   ├── EricSourceProvider.cs           # Live ERIC education & social sciences connector
+│   │   ├── HalSourceProvider.cs            # Live HAL Open Archive multidisciplinary connector
 │   │   ├── SemanticScholarSourceProvider.cs# Live Semantic Scholar citation graph connector
 │   │   ├── YouTubeSourceProvider.cs        # YouTube Data API v3 & educational video parser
 │   │   ├── ScienceDirectSourceProvider.cs  # Elsevier peer-reviewed journal connector
-│   │   └── CommunitySourceProvider.cs      # Queries SQLite peer-uploaded study notes
+│   │   └── CommunitySourceProvider.cs      # Queries Supabase/SQLite peer & system study notes
+│   ├── Security/
+│   │   └── PromptSecurityGuard.cs          # 5-layer prompt injection & XSS output guard
 │   ├── CitationFormatter.cs                # Pure formatter for APA 7th, MLA 9th, Chicago 17th & BibTeX
 │   ├── SourceAggregatorService.cs          # Concurrent fan-out & balanced provider interleaving
+│   ├── SupabaseSubmissionService.cs        # Supabase Postgrest repository with SQLite fallback
 │   ├── StudentSubmissionService.cs         # EF Core SQLite repository for student archive
 │   ├── StudyNoteGeneratorService.cs        # Generates structured study sheets & submission templates
+│   ├── ResearchAssistantService.cs         # OpenAI-compatible grounded AI service (Groq/OpenRouter)
 │   ├── LocalFileStorageService.cs          # Stores student photos in wwwroot/uploads/
 │   └── BookmarkService.cs                  # Write-through cached SQLite bookmark service
+│
+├── database/
+│   └── schema.sql                          # Supabase PostgreSQL DDL, RLS policies & seed data
+│
+├── ISourceKO.Tests/                        # xUnit Automated Test Suite
+│   ├── CitationFormatterTests.cs
+│   ├── StudyNoteGeneratorServiceTests.cs
+│   ├── BookmarkServiceTests.cs
+│   └── PromptSecurityGuardTests.cs
 │
 ├── Styles/                                 # CSS Source Directory
 │   └── tailwind.css                        # Tailwind base directives & micro-interaction components
@@ -319,3 +345,12 @@ npm run watch:css
 dotnet run --launch-profile http
 ```
 On first launch, ISourceKO automatically initializes `isourceko.db` with seeded study notes. Navigate to **`http://localhost:5000`** in your browser.
+
+### 4. Run Automated Tests
+```bash
+dotnet test ISourceKO.Tests/ISourceKO.Tests.csproj -c Release
+```
+
+### 5. Optional Environment Variables (Cloud DB & AISourceAssistant)
+- `Supabase__Url` and `Supabase__Key` — Enable Supabase PostgreSQL persistence for community notes and comments (falls back to SQLite automatically if unset).
+- `AI__ApiKey`, `AI__Provider`, `AI__Model`, and `AI__Endpoint` — Enable **AISourceAssistant** (defaults to Groq `openai/gpt-oss-120b` via `https://api.groq.com/openai/v1/chat/completions`).

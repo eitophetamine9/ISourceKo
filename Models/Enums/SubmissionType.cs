@@ -4,5 +4,6 @@ public enum SubmissionType
 {
     Link,
     ImageNote,
-    Document
+    Document,
+    TextNote
 }

@@ -29,6 +29,12 @@ public class StudentSubmissionModel : BaseModel
     [Column("image_path")]
     public string? ImagePath { get; set; }
 
+    [Column("note_content")]
+    public string? NoteContent { get; set; }
+
+    [Column("is_system_generated")]
+    public bool IsSystemGenerated { get; set; } = false;
+
     [Column("student_name")]
     public string StudentName { get; set; } = "Anonymous Student";
 
@@ -58,6 +64,8 @@ public class StudentSubmissionModel : BaseModel
             Type = (SubmissionType)Type,
             SourceUrl = SourceUrl,
             ImagePath = ImagePath,
+            NoteContent = NoteContent,
+            IsSystemGenerated = IsSystemGenerated,
             StudentName = StudentName,
             SchoolOrProgram = SchoolOrProgram,
             Upvotes = Upvotes,
@@ -70,6 +78,74 @@ public class StudentSubmissionModel : BaseModel
     {
         long.TryParse(s.Id, out var parsedId);
         return new StudentSubmissionModel
+        {
+            Id = parsedId,
+            Title = s.Title,
+            Description = s.Description,
+            Field = (int)s.Field,
+            Type = (int)s.Type,
+            SourceUrl = s.SourceUrl,
+            ImagePath = s.ImagePath,
+            NoteContent = s.NoteContent,
+            IsSystemGenerated = s.IsSystemGenerated,
+            StudentName = s.StudentName,
+            SchoolOrProgram = s.SchoolOrProgram,
+            Upvotes = s.Upvotes,
+            Tags = s.Tags ?? new List<string>(),
+            CreatedAt = s.SubmittedAt
+        };
+    }
+}
+
+/// <summary>
+/// Compatibility model used if the remote Supabase table has not yet had v2.1 columns applied.
+/// </summary>
+[Table("student_submissions")]
+public class StudentSubmissionLegacyModel : BaseModel
+{
+    [PrimaryKey("id", false)]
+    public long Id { get; set; }
+
+    [Column("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [Column("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [Column("field")]
+    public int Field { get; set; } = 0;
+
+    [Column("type")]
+    public int Type { get; set; } = 0;
+
+    [Column("source_url")]
+    public string? SourceUrl { get; set; }
+
+    [Column("image_path")]
+    public string? ImagePath { get; set; }
+
+    [Column("student_name")]
+    public string StudentName { get; set; } = "Anonymous Student";
+
+    [Column("school_or_program")]
+    public string? SchoolOrProgram { get; set; }
+
+    [Column("upvotes")]
+    public int Upvotes { get; set; } = 0;
+
+    [Column("tags")]
+    public List<string> Tags { get; set; } = new();
+
+    [Column("deleted_at")]
+    public DateTime? DeletedAt { get; set; }
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public static StudentSubmissionLegacyModel FromDomainModel(StudentSubmission s)
+    {
+        long.TryParse(s.Id, out var parsedId);
+        return new StudentSubmissionLegacyModel
         {
             Id = parsedId,
             Title = s.Title,

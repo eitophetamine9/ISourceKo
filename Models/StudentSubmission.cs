@@ -23,6 +23,10 @@ public class StudentSubmission
 
     public string? ImagePath { get; set; }
 
+    public string? NoteContent { get; set; }
+
+    public bool IsSystemGenerated { get; set; } = false;
+
     [Required(ErrorMessage = "Student name or alias is required")]
     [StringLength(50, MinimumLength = 2)]
     public string StudentName { get; set; } = "Anonymous Student";
@@ -44,7 +48,7 @@ public class StudentSubmission
             Id = Id,
             Title = Title,
             Description = Description,
-            Url = !string.IsNullOrEmpty(SourceUrl) ? SourceUrl : (ImagePath ?? "#"),
+            Url = !string.IsNullOrEmpty(SourceUrl) ? SourceUrl : (!string.IsNullOrEmpty(ImagePath) ? ImagePath : "/community"),
             Platform = SourcePlatform.StudentCommunity,
             AuthorOrPublisher = $"{StudentName} {(string.IsNullOrEmpty(SchoolOrProgram) ? "" : $"({SchoolOrProgram})")}",
             PublishedDate = SubmittedAt,
@@ -55,7 +59,9 @@ public class StudentSubmission
             Metadata = new Dictionary<string, string>
             {
                 { "SubmissionType", Type.ToString() },
-                { "CommentsCount", Comments.Count.ToString() }
+                { "CommentsCount", Comments.Count.ToString() },
+                { "IsSystemGenerated", IsSystemGenerated ? "true" : "false" },
+                { "HasNoteContent", (!string.IsNullOrWhiteSpace(NoteContent)).ToString() }
             }
         };
     }

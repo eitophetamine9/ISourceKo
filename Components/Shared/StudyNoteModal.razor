@@ -1,6 +1,7 @@
 @using ISourceKO.Models
 @using ISourceKO.Models.Enums
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 @if (Note != null)
 {
@@ -123,6 +124,12 @@
 
                 <div class="flex items-center gap-2">
                     <button type="button"
+                            @onclick="CopyShareLink"
+                            title="Copy direct share link to this study note"
+                            class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-oxford-300 text-oxford-800 hover:bg-oxford-50 rounded text-xs font-semibold">
+                        <span>@(isLinkCopied ? "Link Copied!" : "Copy Link")</span>
+                    </button>
+                    <button type="button"
                             @onclick="CopyNote"
                             class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-oxford-300 text-oxford-800 hover:bg-oxford-50 rounded text-xs font-semibold">
                         <span>@(isCopied ? "Copied!" : "Copy Note")</span>
@@ -148,6 +155,7 @@
     [Parameter] public EventCallback OnClose { get; set; }
 
     private bool isCopied = false;
+    private bool isLinkCopied = false;
 
     private IEnumerable<string> GetFormattedLines()
     {
@@ -156,6 +164,22 @@
             : Note?.Description ?? string.Empty;
 
         return content.Replace("\r\n", "\n").Split('\n');
+    }
+
+    private async Task CopyShareLink()
+    {
+        if (Note == null) return;
+        var shareUrl = $"{Navigation.BaseUri.TrimEnd('/')}/community?note={Uri.EscapeDataString(Note.Id)}";
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", shareUrl);
+            isLinkCopied = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            isLinkCopied = false;
+            StateHasChanged();
+        }
+        catch { }
     }
 
     private async Task CopyNote()

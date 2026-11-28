@@ -1,7 +1,9 @@
 @page "/"
 @rendermode InteractiveServer
+@using ISourceKO.Services
 @inject ISourceAggregatorService AggregatorService
 @inject IBookmarkService BookmarkService
+@inject IStudentSubmissionService SubmissionService
 @inject IJSRuntime JS
 
 <PageTitle>ISourceKO — Academic Discovery Across Literature, Lectures & Notes</PageTitle>
@@ -187,6 +189,15 @@
                             </svg>
                         </button>
                     }
+
+                    @if (response.Items.Any())
+                    {
+                        <button type="button"
+                                @onclick="OpenResearchAssistant"
+                                class="btn-press inline-flex items-center gap-1.5 px-3 py-1 bg-oxford-950 hover:bg-oxford-800 text-bone text-xs font-bold rounded shadow-subtle transition-all">
+                            <span>Ask Sources (AI)</span>
+                        </button>
+                    }
                 </div>
             </div>
 
@@ -199,6 +210,7 @@
                         <SourceCard Item="item"
                                     OnWatchVideo="OpenVideoModal"
                                     OnReadPdf="OpenPdfModal"
+                                    OnReadNote="OpenStudyNoteModal"
                                     OnOpenCitation="OpenCitationModal" />
                     }
                 </div>
@@ -346,6 +358,10 @@
     <VideoPlayerModal Item="activeVideoItem" OnClose="CloseVideoModal" />
     <PdfViewerModal Item="activePdfItem" OnClose="ClosePdfModal" />
     <CitationModal Item="activeCitationItem" OnClose="CloseCitationModal" />
+    <StudyNoteModal Note="activeStudyNote" OnClose="CloseStudyNoteModal" />
+    <ResearchAssistantModal IsOpen="isAssistantOpen"
+                            Sources="response?.Items ?? new List<SourceItem>()"
+                            OnClose="CloseResearchAssistant" />
 </div>
 
 @code {
@@ -365,6 +381,8 @@
     private SourceItem? activeVideoItem;
     private SourceItem? activePdfItem;
     private SourceItem? activeCitationItem;
+    private StudentSubmission? activeStudyNote;
+    private bool isAssistantOpen = false;
 
     private bool HasActiveFilters =>
         currentCategory != ResourceCategory.All ||
@@ -585,5 +603,47 @@
     private void CloseCitationModal()
     {
         activeCitationItem = null;
+    }
+
+    private async Task OpenStudyNoteModal(SourceItem item)
+    {
+        var loaded = await SubmissionService.GetByIdAsync(item.Id);
+        if (loaded != null)
+        {
+            activeStudyNote = loaded;
+            return;
+        }
+
+        var isSystem = item.Metadata.TryGetValue("IsSystemGenerated", out var sysVal) &&
+                       string.Equals(sysVal, "true", StringComparison.OrdinalIgnoreCase);
+
+        var fallback = new StudentSubmission
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            Field = item.Field,
+            StudentName = isSystem ? "ISource Gen" : item.AuthorOrPublisher,
+            SubmittedAt = item.PublishedDate ?? DateTime.UtcNow,
+            Tags = item.Tags,
+            IsSystemGenerated = isSystem
+        };
+        StudyNoteGeneratorService.EnsureHydrated(fallback);
+        activeStudyNote = fallback;
+    }
+
+    private void CloseStudyNoteModal()
+    {
+        activeStudyNote = null;
+    }
+
+    private void OpenResearchAssistant()
+    {
+        isAssistantOpen = true;
+    }
+
+    private void CloseResearchAssistant()
+    {
+        isAssistantOpen = false;
     }
 }

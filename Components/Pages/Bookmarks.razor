@@ -7,6 +7,7 @@
 @using ISourceKO.Models.Enums
 @using ISourceKO.Services
 @inject IBookmarkService BookmarkService
+@inject IStudentSubmissionService SubmissionService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -43,6 +44,13 @@
 
             @if (bookmarks.Any())
             {
+                <button type="button"
+                        @onclick="() => isAssistantOpen = true"
+                        title="Ask AI questions grounded strictly in your saved sources"
+                        class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-oxford-900 hover:bg-oxford-800 text-bone text-xs font-bold rounded shadow-subtle transition-all">
+                    <span>Ask Syllabus (AI)</span>
+                </button>
+
                 <button type="button"
                         @onclick="ExportJsonBackup"
                         title="Download a portable JSON backup of your saved bookmarks and lecture scratchpad notes"
@@ -99,6 +107,31 @@
                     </svg>
                     <span>@(isGuideExported ? "Study Guide Exported!" : "Export Study Guide (.md)")</span>
                 </button>
+
+                @if (confirmClearAll)
+                {
+                    <div class="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 px-2 py-1 rounded">
+                        <button type="button"
+                                @onclick="ConfirmClearAll"
+                                class="px-2 py-0.5 bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold rounded">
+                            Confirm Clear
+                        </button>
+                        <button type="button"
+                                @onclick="() => confirmClearAll = false"
+                                class="px-2 py-0.5 text-oxford-700 hover:text-oxford-950 text-[11px] font-semibold">
+                            Cancel
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <button type="button"
+                            @onclick="() => confirmClearAll = true"
+                            title="Clear all saved bookmarks for this browser"
+                            class="btn-press inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-oxford-200 text-oxford-500 hover:text-red-700 hover:border-red-300 hover:bg-red-50 text-xs font-semibold rounded transition-colors">
+                        <span>Clear All</span>
+                    </button>
+                }
 
                 <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-oxford-950 text-white font-mono shadow-subtle">@bookmarks.Count</span>
             }
@@ -218,6 +251,7 @@
                     <SourceCard Item="item"
                                 OnWatchVideo="OpenVideoModal"
                                 OnReadPdf="OpenPdfModal"
+                                OnReadNote="OpenStudyNoteModal"
                                 OnOpenCitation="OpenCitationModal" />
                 }
             </div>
@@ -265,6 +299,15 @@
 <CitationModal Item="@activeCitationItem"
                OnClose="CloseCitationModal" />
 
+<!-- In-App Study Note Reader Modal -->
+<StudyNoteModal Note="@activeStudyNote"
+                OnClose="CloseStudyNoteModal" />
+
+<!-- Source-Grounded Research Assistant Modal -->
+<ResearchAssistantModal IsOpen="isAssistantOpen"
+                        Sources="bookmarks"
+                        OnClose="() => isAssistantOpen = false" />
+
 @code {
     private static readonly JsonSerializerOptions BackupJsonOptions = new()
     {
@@ -280,6 +323,7 @@
     private bool isJsonExported = false;
     private bool isImporting = false;
     private bool replaceOnImport = false;
+    private bool confirmClearAll = false;
     private BookmarkBackupBundle? pendingImportBundle;
     private string? pendingImportFileName;
     private string? importSuccessMessage;
@@ -288,6 +332,8 @@
     private SourceItem? activeVideoItem;
     private SourceItem? activePdfItem;
     private SourceItem? activeCitationItem;
+    private StudentSubmission? activeStudyNote;
+    private bool isAssistantOpen = false;
 
     private IEnumerable<SourceItem> FilteredBookmarks =>
         selectedField.HasValue
@@ -583,6 +629,43 @@
         pendingImportFileName = null;
     }
 
+    private async Task ConfirmClearAll()
+    {
+        confirmClearAll = false;
+        await BookmarkService.ClearAllBookmarksAsync();
+        selectedField = null;
+        LoadBookmarks();
+        importSuccessMessage = "Cleared all saved bookmarks from this browser.";
+    }
+
+    private async Task OpenStudyNoteModal(SourceItem item)
+    {
+        var loaded = await SubmissionService.GetByIdAsync(item.Id);
+        if (loaded != null)
+        {
+            activeStudyNote = loaded;
+            return;
+        }
+
+        var isSystem = item.Metadata.TryGetValue("IsSystemGenerated", out var sysVal) &&
+                       string.Equals(sysVal, "true", StringComparison.OrdinalIgnoreCase);
+
+        var fallback = new StudentSubmission
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Description = item.Description,
+            Field = item.Field,
+            StudentName = isSystem ? "ISource Gen" : item.AuthorOrPublisher,
+            SubmittedAt = item.PublishedDate ?? DateTime.UtcNow,
+            Tags = item.Tags,
+            IsSystemGenerated = isSystem
+        };
+        StudyNoteGeneratorService.EnsureHydrated(fallback);
+        activeStudyNote = fallback;
+    }
+
+    private void CloseStudyNoteModal() => activeStudyNote = null;
     private void OpenVideoModal(SourceItem item) => activeVideoItem = item;
     private void CloseVideoModal() => activeVideoItem = null;
     private void OpenPdfModal(SourceItem item) => activePdfItem = item;

@@ -250,6 +250,36 @@ public class BookmarkService : IBookmarkService
         return result;
     }
 
+    public async Task ClearAllBookmarksAsync()
+    {
+        var activeClient = _clientId ?? "default";
+
+        lock (_lock)
+        {
+            _cache.Clear();
+        }
+
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync();
+            var entities = await db.Bookmarks
+                .Where(b => b.ClientId == activeClient)
+                .ToListAsync();
+
+            if (entities.Count > 0)
+            {
+                db.Bookmarks.RemoveRange(entities);
+                await db.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to clear bookmarks for client {ClientId}", activeClient);
+        }
+
+        OnBookmarksChanged?.Invoke();
+    }
+
     private static string BuildKey(string clientId, string sourceId) => $"{clientId}:{sourceId}";
 
     private static SourceItem MapToModel(BookmarkEntity e)

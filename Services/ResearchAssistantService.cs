@@ -33,7 +33,7 @@ public class ResearchAssistantService : IResearchAssistantService
         4. Answer ONLY using facts explicitly stated in the numbered <untrusted_source> entries provided.
         5. Cite supporting sources inline using bracketed numbers like [1] or [2].
         6. If the provided sources do not contain enough information to answer, clearly state what is missing without inventing facts or citations.
-        7. Keep responses concise, structured, and academic in tone.
+        7. Keep responses concise, structured, and academic in tone. Use clear bullet points or numbered lists rather than wide tables.
         """;
 
     private const string QueryHelperSystemInstruction = """
@@ -46,6 +46,7 @@ public class ResearchAssistantService : IResearchAssistantService
         4. Help the student refine their topic into 3-5 precise academic search queries they can run in ISourceKO.
         5. Recommend which ISourceKO providers fit best (OpenAlex, DOAJ, Europe PMC, ERIC, HAL, arXiv, PubMed, Crossref, Semantic Scholar, ScienceDirect, YouTube).
         6. NEVER invent fake paper titles, authors, DOIs, or bracketed citations [1]. Remind the student to run a search to ground answers in real papers.
+        7. Format with short headings and numbered or bulleted lists instead of wide tables.
         """;
 
     public ResearchAssistantService(

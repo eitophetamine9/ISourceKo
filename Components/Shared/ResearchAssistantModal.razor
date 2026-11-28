@@ -1,3 +1,4 @@
+@using System.Text.RegularExpressions
 @using ISourceKO.Models
 @using ISourceKO.Services.Interfaces
 @inject IResearchAssistantService AssistantService
@@ -52,8 +53,8 @@
                 </div>
             </header>
 
-            <!-- Scrollable Conversation Canvas -->
-            <div class="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-6" data-lenis-prevent>
+            <!-- Scrollable Chat Canvas -->
+            <div class="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6 py-5 space-y-5" data-lenis-prevent>
                 @if (!AssistantService.IsConfigured)
                 {
                     <div class="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 text-xs leading-relaxed">
@@ -106,88 +107,144 @@
                 }
                 else
                 {
-                    <!-- Q&A Thread -->
+                    <!-- Classic Left/Right Chat Stream -->
                     @for (int t = 0; t < thread.Count; t++)
                     {
                         var turn = thread[t];
                         var turnIndex = t;
-                        <article class="space-y-3 @(t > 0 ? "pt-6 border-t border-oxford-200" : "")">
-                            <!-- User Question -->
-                            <div class="flex items-start justify-between gap-3">
-                                <h4 class="font-serif text-base font-bold text-oxford-950 leading-snug">
-                                    @turn.Question
-                                </h4>
-                                <span class="text-[10px] font-mono text-oxford-400 shrink-0 mt-1">You</span>
+                        <div class="space-y-4">
+                            <!-- User Bubble (Right) -->
+                            <div class="flex justify-end">
+                                <div class="max-w-[82%] space-y-1">
+                                    <div class="text-right text-[10px] font-mono font-semibold text-oxford-400 pr-1">
+                                        You
+                                    </div>
+                                    <div class="px-4 py-2.5 rounded-2xl rounded-br-sm bg-oxford-950 text-bone text-xs sm:text-sm leading-relaxed shadow-subtle">
+                                        @turn.Question
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Assistant Synthesis -->
-                            <div class="p-4 sm:p-5 rounded-lg bg-white border border-oxford-200/90 shadow-subtle space-y-3">
-                                <div class="flex items-center justify-between border-b border-oxford-100 pb-2">
-                                    <span class="text-[11px] font-mono font-bold text-oxford-500 uppercase tracking-wider">
-                                        AISourceAssistant
-                                    </span>
-                                    <button type="button"
-                                            @onclick="() => CopyTurnAnswer(turnIndex, turn.Answer)"
-                                            class="btn-press px-2 py-0.5 rounded border border-oxford-200 text-[11px] font-semibold text-oxford-600 hover:text-oxford-950 hover:bg-oxford-50 transition-colors">
-                                        @(copiedTurnIndex == turnIndex ? "Copied" : "Copy")
-                                    </button>
-                                </div>
+                            <!-- AISourceAssistant Bubble (Left) -->
+                            <div class="flex justify-start">
+                                <div class="w-full max-w-[92%] space-y-1">
+                                    <div class="flex items-center justify-between px-1">
+                                        <span class="text-[10px] font-mono font-bold text-oxford-500 uppercase tracking-wider">
+                                            AISourceAssistant
+                                        </span>
+                                    </div>
+                                    <div class="p-4 sm:p-5 rounded-2xl rounded-bl-sm bg-white border border-oxford-200/90 shadow-subtle space-y-3">
+                                        <div class="space-y-2.5 text-xs sm:text-sm text-oxford-800 leading-relaxed">
+                                            @foreach (var block in ParseBlocks(turn.Answer))
+                                            {
+                                                @if (block.Kind == BlockKind.Heading)
+                                                {
+                                                    <p class="font-serif text-sm sm:text-base font-bold text-oxford-950 pt-1">
+                                                        @RenderInline(block.Text)
+                                                    </p>
+                                                }
+                                                else if (block.Kind == BlockKind.Bullet)
+                                                {
+                                                    <div class="flex items-start gap-2 pl-1">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-flame mt-2 shrink-0"></span>
+                                                        <div>@RenderInline(block.Text)</div>
+                                                    </div>
+                                                }
+                                                else if (block.Kind == BlockKind.Numbered)
+                                                {
+                                                    <div class="flex items-start gap-2 pl-1">
+                                                        <span class="font-mono text-[11px] font-bold text-flame mt-0.5 shrink-0">@block.Prefix</span>
+                                                        <div>@RenderInline(block.Text)</div>
+                                                    </div>
+                                                }
+                                                else if (block.Kind == BlockKind.Table && block.TableRows != null && block.TableRows.Count > 0)
+                                                {
+                                                    <div class="overflow-x-auto rounded-lg border border-oxford-200 my-1">
+                                                        <table class="w-full text-left border-collapse text-xs">
+                                                            <thead class="bg-oxford-50 border-b border-oxford-200 text-oxford-900 font-semibold">
+                                                                <tr>
+                                                                    @foreach (var cell in block.TableRows[0])
+                                                                    {
+                                                                        <th class="px-3 py-2 align-top">@RenderInline(cell)</th>
+                                                                    }
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody class="divide-y divide-oxford-100">
+                                                                @foreach (var row in block.TableRows.Skip(1))
+                                                                {
+                                                                    <tr class="hover:bg-bone/60">
+                                                                        @foreach (var cell in row)
+                                                                        {
+                                                                            <td class="px-3 py-2 align-top text-oxford-800">@RenderInline(cell)</td>
+                                                                        }
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                }
+                                                else if (!string.IsNullOrWhiteSpace(block.Text))
+                                                {
+                                                    <p>@RenderInline(block.Text)</p>
+                                                }
+                                            }
+                                        </div>
 
-                                <div class="space-y-2 text-xs sm:text-sm text-oxford-800 leading-relaxed">
-                                    @foreach (var line in FormatLines(turn.Answer))
-                                    {
-                                        @if (line.StartsWith("## ") || line.StartsWith("### "))
+                                        @if (turn.CitedIndices.Any())
                                         {
-                                            <p class="font-serif text-sm sm:text-base font-bold text-oxford-950 pt-1">
-                                                @line.TrimStart('#', ' ')
-                                            </p>
-                                        }
-                                        else if (line.StartsWith("- ") || line.StartsWith("* "))
-                                        {
-                                            <div class="flex items-start gap-2 pl-1">
-                                                <span class="w-1.5 h-1.5 rounded-full bg-flame mt-2 shrink-0"></span>
-                                                <span>@line.Substring(2)</span>
+                                            <div class="pt-3 border-t border-oxford-100 space-y-1.5">
+                                                <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-oxford-400">
+                                                    Cited Sources
+                                                </p>
+                                                @foreach (var idx in turn.CitedIndices)
+                                                {
+                                                    @if (idx >= 1 && idx <= Sources.Count)
+                                                    {
+                                                        var src = Sources[idx - 1];
+                                                        <div class="text-xs flex items-baseline gap-2">
+                                                            <span class="font-mono font-bold text-flame shrink-0">[@idx]</span>
+                                                            <a href="@src.Url" target="_blank" rel="noopener noreferrer" class="text-oxford-900 hover:underline font-medium truncate">
+                                                                @src.Title
+                                                            </a>
+                                                            <span class="text-[10px] font-mono text-oxford-400 shrink-0">@src.Platform</span>
+                                                        </div>
+                                                    }
+                                                }
                                             </div>
                                         }
-                                        else if (!string.IsNullOrWhiteSpace(line))
-                                        {
-                                            <p>@line</p>
-                                        }
-                                    }
-                                </div>
 
-                                @if (turn.CitedIndices.Any())
-                                {
-                                    <div class="pt-3 border-t border-oxford-100 space-y-1.5">
-                                        <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-oxford-400">
-                                            Cited Sources
-                                        </p>
-                                        @foreach (var idx in turn.CitedIndices)
-                                        {
-                                            @if (idx >= 1 && idx <= Sources.Count)
-                                            {
-                                                var src = Sources[idx - 1];
-                                                <div class="text-xs flex items-baseline gap-2">
-                                                    <span class="font-mono font-bold text-flame shrink-0">[@idx]</span>
-                                                    <a href="@src.Url" target="_blank" rel="noopener noreferrer" class="text-oxford-900 hover:underline font-medium truncate">
-                                                        @src.Title
-                                                    </a>
-                                                    <span class="text-[10px] font-mono text-oxford-400 shrink-0">@src.Platform</span>
-                                                </div>
-                                            }
-                                        }
+                                        <div class="pt-2 border-t border-oxford-100 flex justify-end">
+                                            <button type="button"
+                                                    @onclick="() => CopyTurnAnswer(turnIndex, turn.Answer)"
+                                                    class="btn-press px-2 py-0.5 rounded border border-oxford-200 text-[11px] font-semibold text-oxford-600 hover:text-oxford-950 hover:bg-oxford-50 transition-colors">
+                                                @(copiedTurnIndex == turnIndex ? "Copied" : "Copy")
+                                            </button>
+                                        </div>
                                     </div>
-                                }
+                                </div>
                             </div>
-                        </article>
+                        </div>
                     }
                 }
 
                 @if (isThinking)
                 {
-                    <div class="p-4 rounded-lg bg-white border border-oxford-200 flex items-center gap-3 text-xs text-oxford-600 animate-fade-in">
-                        <span class="w-3.5 h-3.5 border-2 border-oxford-300 border-t-flame rounded-full animate-spin shrink-0"></span>
-                        <span>@(Sources.Count > 0 ? "Synthesizing grounded answer from sources..." : "Preparing academic search strategy...")</span>
+                    @if (!string.IsNullOrEmpty(pendingQuestion))
+                    {
+                        <div class="flex justify-end">
+                            <div class="max-w-[82%] space-y-1">
+                                <div class="text-right text-[10px] font-mono font-semibold text-oxford-400 pr-1">You</div>
+                                <div class="px-4 py-2.5 rounded-2xl rounded-br-sm bg-oxford-950 text-bone text-xs sm:text-sm leading-relaxed shadow-subtle">
+                                    @pendingQuestion
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    <div class="flex justify-start">
+                        <div class="px-4 py-3 rounded-2xl rounded-bl-sm bg-white border border-oxford-200 flex items-center gap-3 text-xs text-oxford-600 shadow-subtle animate-fade-in">
+                            <span class="w-3.5 h-3.5 border-2 border-oxford-300 border-t-flame rounded-full animate-spin shrink-0"></span>
+                            <span>@(Sources.Count > 0 ? "Synthesizing grounded answer from sources..." : "Preparing academic search strategy...")</span>
+                        </div>
                     </div>
                 }
 
@@ -236,8 +293,16 @@
     private sealed record StarterPrompt(string Title, string Subtitle, string Prompt);
     private sealed record ChatTurn(string Question, string Answer, List<int> CitedIndices);
 
+    private enum BlockKind { Paragraph, Heading, Bullet, Numbered, Table }
+    private sealed record RenderedBlock(BlockKind Kind, string Text, string Prefix = "", List<List<string>>? TableRows = null);
+
+    private static readonly Regex NumberedListRegex = new(@"^(\d+\.)\s+(.+)$", RegexOptions.Compiled);
+    private static readonly Regex TableSeparatorRegex = new(@"^\|[\s:\-\|]+\|$", RegexOptions.Compiled);
+    private static readonly Regex InlineTokenRegex = new(@"(\*\*[^*]+\*\*|`[^`]+`)", RegexOptions.Compiled);
+
     private readonly List<ChatTurn> thread = new();
     private string questionText = string.Empty;
+    private string? pendingQuestion;
     private bool isThinking = false;
     private int? copiedTurnIndex;
     private string? errorMessage;
@@ -270,6 +335,7 @@
         if (isThinking || string.IsNullOrWhiteSpace(questionText)) return;
         var currentQuestion = questionText.Trim();
         questionText = string.Empty;
+        pendingQuestion = currentQuestion;
         isThinking = true;
         errorMessage = null;
 
@@ -288,6 +354,7 @@
         }
         finally
         {
+            pendingQuestion = null;
             isThinking = false;
         }
     }
@@ -295,12 +362,123 @@
     private void ClearThread()
     {
         thread.Clear();
+        pendingQuestion = null;
         errorMessage = null;
         copiedTurnIndex = null;
     }
 
-    private static IEnumerable<string> FormatLines(string answer)
-        => answer.Replace("\r\n", "\n").Split('\n');
+    private static List<RenderedBlock> ParseBlocks(string answer)
+    {
+        var blocks = new List<RenderedBlock>();
+        var lines = answer.Replace("\r\n", "\n").Split('\n');
+        int i = 0;
+
+        while (i < lines.Length)
+        {
+            var raw = lines[i];
+            var trimmed = raw.Trim();
+
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                i++;
+                continue;
+            }
+
+            if (trimmed.StartsWith("|") && trimmed.EndsWith("|"))
+            {
+                var tableRows = new List<List<string>>();
+                while (i < lines.Length)
+                {
+                    var rowLine = lines[i].Trim();
+                    if (!rowLine.StartsWith("|") || !rowLine.EndsWith("|")) break;
+                    if (!TableSeparatorRegex.IsMatch(rowLine))
+                    {
+                        var cells = rowLine
+                            .Trim('|')
+                            .Split('|')
+                            .Select(c => c.Trim())
+                            .ToList();
+                        if (cells.Count > 0) tableRows.Add(cells);
+                    }
+                    i++;
+                }
+                if (tableRows.Count > 0)
+                {
+                    blocks.Add(new RenderedBlock(BlockKind.Table, string.Empty, TableRows: tableRows));
+                }
+                continue;
+            }
+
+            if (trimmed.StartsWith("#"))
+            {
+                blocks.Add(new RenderedBlock(BlockKind.Heading, trimmed.TrimStart('#', ' ')));
+                i++;
+                continue;
+            }
+
+            if (trimmed.StartsWith("- ") || trimmed.StartsWith("* "))
+            {
+                blocks.Add(new RenderedBlock(BlockKind.Bullet, trimmed.Substring(2).Trim()));
+                i++;
+                continue;
+            }
+
+            var numMatch = NumberedListRegex.Match(trimmed);
+            if (numMatch.Success)
+            {
+                blocks.Add(new RenderedBlock(BlockKind.Numbered, numMatch.Groups[2].Value.Trim(), numMatch.Groups[1].Value));
+                i++;
+                continue;
+            }
+
+            blocks.Add(new RenderedBlock(BlockKind.Paragraph, trimmed));
+            i++;
+        }
+
+        return blocks;
+    }
+
+    private static RenderFragment RenderInline(string text) => builder =>
+    {
+        if (string.IsNullOrEmpty(text)) return;
+
+        int seq = 0;
+        int lastIndex = 0;
+        foreach (Match m in InlineTokenRegex.Matches(text))
+        {
+            if (m.Index > lastIndex)
+            {
+                builder.AddContent(seq++, text.Substring(lastIndex, m.Index - lastIndex));
+            }
+
+            var token = m.Value;
+            if (token.StartsWith("**") && token.EndsWith("**") && token.Length > 4)
+            {
+                builder.OpenElement(seq++, "strong");
+                builder.AddAttribute(seq++, "class", "font-semibold text-oxford-950");
+                builder.AddContent(seq++, token.Substring(2, token.Length - 4));
+                builder.CloseElement();
+            }
+            else if (token.StartsWith("`") && token.EndsWith("`") && token.Length > 2)
+            {
+                builder.OpenElement(seq++, "code");
+                builder.AddAttribute(seq++, "class", "px-1 py-0.5 bg-bone border border-oxford-200 rounded font-mono text-[11px] text-oxford-900");
+                builder.AddContent(seq++, token.Substring(1, token.Length - 2));
+                builder.CloseElement();
+            }
+            else
+            {
+                builder.AddContent(seq++, token);
+            }
+
+            lastIndex = m.Index + m.Length;
+        }
+
+        if (lastIndex < text.Length)
+        {
+            builder.AddContent(seq++, text.Substring(lastIndex));
+        }
+    };
 
     private async Task CopyTurnAnswer(int index, string answer)
     {

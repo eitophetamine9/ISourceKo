@@ -5,87 +5,191 @@
 
 @if (IsOpen)
 {
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-oxford-950/80 backdrop-blur-sm animate-fade-in"
+    <div class="fixed inset-0 z-50 flex justify-end bg-oxford-950/60 backdrop-blur-xs animate-fade-in"
          data-lenis-prevent
          @onclick="Close">
-        <div class="relative w-full max-w-3xl max-h-[90vh] bg-bone text-oxford-950 rounded-xl overflow-hidden shadow-pop border border-oxford-300 flex flex-col animate-scale-in"
-             data-lenis-prevent
-             @onclick:stopPropagation="true">
+        <aside class="relative w-full max-w-2xl h-full bg-bone text-oxford-950 border-l border-oxford-200 shadow-pop flex flex-col animate-scale-in"
+               data-lenis-prevent
+               @onclick:stopPropagation="true"
+               aria-label="AISourceAssistant">
 
-            <!-- Header -->
-            <div class="px-6 py-4 bg-white border-b border-oxford-200 flex items-start justify-between gap-4">
-                <div>
-                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-oxford-950 text-bone">
-                            Source-Grounded AI
-                        </span>
-                        <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-oxford-50 text-oxford-700 border border-oxford-200">
-                            @AssistantService.ProviderName • @AssistantService.ModelName
-                        </span>
-                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-evergreen-light text-evergreen-dark border border-emerald-200">
-                            @(Sources.Count > 0 ? $"{Math.Min(Sources.Count, 10)} Sources Grounded" : "Query Helper Mode")
+            <!-- Clean Editorial Header -->
+            <header class="px-6 py-4 bg-white border-b border-oxford-200 flex items-center justify-between gap-4 shrink-0">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full @(AssistantService.IsConfigured ? "bg-evergreen" : "bg-amber-500") shrink-0"></span>
+                        <h3 class="font-serif text-lg font-bold text-oxford-950 tracking-tight truncate">
+                            AISourceAssistant
+                        </h3>
+                        <span class="text-[11px] font-mono text-oxford-500 border border-oxford-200 bg-bone px-2 py-0.5 rounded">
+                            @(Sources.Count > 0 ? $"{Math.Min(Sources.Count, 10)} sources" : "Query helper")
                         </span>
                     </div>
-                    <h3 class="font-serif text-lg sm:text-xl font-bold text-oxford-950">
-                        @(Sources.Count > 0 ? "Ask Retrieved Sources" : "ISourceKO Research Assistant")
-                    </h3>
-                    <p class="text-xs text-oxford-500 mt-0.5">
+                    <p class="text-[11px] text-oxford-500 mt-0.5 truncate">
                         @(Sources.Count > 0
-                            ? "Answers are synthesized strictly from the retrieved papers and study notes on screen with inline [N] citations."
-                            : "Refine your research question into academic search queries or run a search to ground answers in real papers.")
+                            ? "Grounded strictly in the sources currently loaded on screen."
+                            : "Refines topics into academic queries across ISourceKO's 12 providers.")
                     </p>
                 </div>
 
-                <button type="button"
-                        @onclick="Close"
-                        aria-label="Close research assistant"
-                        class="btn-press p-1.5 rounded text-oxford-400 hover:text-oxford-900 hover:bg-oxford-100 transition-colors shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    @if (thread.Any())
+                    {
+                        <button type="button"
+                                @onclick="ClearThread"
+                                class="btn-press px-2.5 py-1 rounded text-xs font-semibold text-oxford-600 hover:text-oxford-950 hover:bg-oxford-100 transition-colors">
+                            Clear
+                        </button>
+                    }
+                    <button type="button"
+                            @onclick="Close"
+                            aria-label="Close AISourceAssistant"
+                            class="btn-press p-1.5 rounded text-oxford-500 hover:text-oxford-950 hover:bg-oxford-100 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
 
-            <!-- Body -->
-            <div class="flex-1 overflow-y-auto overscroll-contain p-6 space-y-4" data-lenis-prevent>
+            <!-- Scrollable Conversation Canvas -->
+            <div class="flex-1 overflow-y-auto overscroll-contain px-6 py-6 space-y-6" data-lenis-prevent>
                 @if (!AssistantService.IsConfigured)
                 {
-                    <div class="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
-                        <p class="font-bold mb-1">Free-Tier AI Model Not Configured</p>
+                    <div class="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 text-xs leading-relaxed">
+                        <p class="font-bold mb-1">API Key Required</p>
                         <p>
-                            To activate the source-grounded assistant, set <code class="font-mono bg-white px-1 py-0.5 rounded border border-amber-200">AI__ApiKey</code> in your environment variables
-                            (for example, a free Groq or OpenRouter API key). Zero app-side rate limits are enforced.
+                            Set <code class="font-mono bg-white px-1 py-0.5 rounded border border-amber-200">AI__ApiKey</code> in your environment variables to activate AISourceAssistant.
                         </p>
                     </div>
                 }
 
-                <!-- Quick Starter Prompts -->
-                <div class="flex flex-wrap items-center gap-1.5">
-                    <span class="text-[11px] font-bold text-oxford-500 uppercase tracking-wider mr-1">Quick Prompts:</span>
-                    @foreach (var prompt in ActiveQuickPrompts)
-                    {
-                        <button type="button"
-                                @onclick="() => RunQuickPrompt(prompt)"
-                                disabled="@isThinking"
-                                class="btn-press px-2.5 py-1 rounded bg-white hover:bg-oxford-950 text-oxford-800 hover:text-bone border border-oxford-200 text-[11px] font-semibold transition-colors disabled:opacity-50">
-                            @prompt
-                        </button>
-                    }
-                </div>
+                @if (!thread.Any() && !isThinking)
+                {
+                    <!-- Empty State: Calm Editorial Prompt Guide -->
+                    <div class="py-6 space-y-5">
+                        <div class="space-y-1.5">
+                            <p class="text-[11px] font-mono font-bold uppercase tracking-wider text-oxford-400">
+                                @(Sources.Count > 0 ? "Source-Grounded Synthesis" : "Research Desk")
+                            </p>
+                            <h4 class="font-serif text-xl font-bold text-oxford-950">
+                                @(Sources.Count > 0
+                                    ? "Ask a question about your retrieved literature"
+                                    : "What topic are you researching today?")
+                            </h4>
+                            <p class="text-xs text-oxford-600 leading-relaxed max-w-lg">
+                                @(Sources.Count > 0
+                                    ? "Every answer cites only the retrieved papers or saved notes on screen using [N] references."
+                                    : "Describe your assignment or topic in plain words to get targeted scholarly search queries and matching providers.")
+                            </p>
+                        </div>
 
-                <!-- Question Form -->
-                <form @onsubmit="SubmitQuestion" class="flex flex-col sm:flex-row gap-2">
-                    <input @bind="questionText"
-                           type="text"
-                           maxlength="1000"
-                           placeholder="Ask a question grounded in these sources (max 1000 chars)..."
-                           class="flex-1 px-3 py-2 bg-white border border-oxford-300 rounded text-xs text-oxford-950 focus:outline-none focus:ring-2 focus:ring-oxford-950" />
-                    <button type="submit"
-                            disabled="@(isThinking || string.IsNullOrWhiteSpace(questionText))"
-                            class="btn-flame px-4 py-2 rounded text-xs font-bold text-white shadow-subtle disabled:opacity-50 shrink-0">
-                        @(isThinking ? "Synthesizing..." : "Ask Sources")
-                    </button>
-                </form>
+                        <div class="grid grid-cols-1 gap-2.5">
+                            @foreach (var starter in ActiveStarterPrompts)
+                            {
+                                <button type="button"
+                                        @onclick="() => RunQuickPrompt(starter.Prompt)"
+                                        class="btn-press text-left p-3.5 rounded-lg bg-white border border-oxford-200 hover:border-oxford-400 shadow-subtle transition-all group">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-xs font-bold text-oxford-950 group-hover:text-flame transition-colors">
+                                            @starter.Title
+                                        </span>
+                                        <svg class="w-3.5 h-3.5 text-oxford-400 group-hover:text-flame transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </div>
+                                    <p class="text-[11px] text-oxford-500 mt-1">@starter.Subtitle</p>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Q&A Thread -->
+                    @for (int t = 0; t < thread.Count; t++)
+                    {
+                        var turn = thread[t];
+                        var turnIndex = t;
+                        <article class="space-y-3 @(t > 0 ? "pt-6 border-t border-oxford-200" : "")">
+                            <!-- User Question -->
+                            <div class="flex items-start justify-between gap-3">
+                                <h4 class="font-serif text-base font-bold text-oxford-950 leading-snug">
+                                    @turn.Question
+                                </h4>
+                                <span class="text-[10px] font-mono text-oxford-400 shrink-0 mt-1">You</span>
+                            </div>
+
+                            <!-- Assistant Synthesis -->
+                            <div class="p-4 sm:p-5 rounded-lg bg-white border border-oxford-200/90 shadow-subtle space-y-3">
+                                <div class="flex items-center justify-between border-b border-oxford-100 pb-2">
+                                    <span class="text-[11px] font-mono font-bold text-oxford-500 uppercase tracking-wider">
+                                        AISourceAssistant
+                                    </span>
+                                    <button type="button"
+                                            @onclick="() => CopyTurnAnswer(turnIndex, turn.Answer)"
+                                            class="btn-press px-2 py-0.5 rounded border border-oxford-200 text-[11px] font-semibold text-oxford-600 hover:text-oxford-950 hover:bg-oxford-50 transition-colors">
+                                        @(copiedTurnIndex == turnIndex ? "Copied" : "Copy")
+                                    </button>
+                                </div>
+
+                                <div class="space-y-2 text-xs sm:text-sm text-oxford-800 leading-relaxed">
+                                    @foreach (var line in FormatLines(turn.Answer))
+                                    {
+                                        @if (line.StartsWith("## ") || line.StartsWith("### "))
+                                        {
+                                            <p class="font-serif text-sm sm:text-base font-bold text-oxford-950 pt-1">
+                                                @line.TrimStart('#', ' ')
+                                            </p>
+                                        }
+                                        else if (line.StartsWith("- ") || line.StartsWith("* "))
+                                        {
+                                            <div class="flex items-start gap-2 pl-1">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-flame mt-2 shrink-0"></span>
+                                                <span>@line.Substring(2)</span>
+                                            </div>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(line))
+                                        {
+                                            <p>@line</p>
+                                        }
+                                    }
+                                </div>
+
+                                @if (turn.CitedIndices.Any())
+                                {
+                                    <div class="pt-3 border-t border-oxford-100 space-y-1.5">
+                                        <p class="text-[10px] font-mono font-bold uppercase tracking-wider text-oxford-400">
+                                            Cited Sources
+                                        </p>
+                                        @foreach (var idx in turn.CitedIndices)
+                                        {
+                                            @if (idx >= 1 && idx <= Sources.Count)
+                                            {
+                                                var src = Sources[idx - 1];
+                                                <div class="text-xs flex items-baseline gap-2">
+                                                    <span class="font-mono font-bold text-flame shrink-0">[@idx]</span>
+                                                    <a href="@src.Url" target="_blank" rel="noopener noreferrer" class="text-oxford-900 hover:underline font-medium truncate">
+                                                        @src.Title
+                                                    </a>
+                                                    <span class="text-[10px] font-mono text-oxford-400 shrink-0">@src.Platform</span>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </article>
+                    }
+                }
+
+                @if (isThinking)
+                {
+                    <div class="p-4 rounded-lg bg-white border border-oxford-200 flex items-center gap-3 text-xs text-oxford-600 animate-fade-in">
+                        <span class="w-3.5 h-3.5 border-2 border-oxford-300 border-t-flame rounded-full animate-spin shrink-0"></span>
+                        <span>@(Sources.Count > 0 ? "Synthesizing grounded answer from sources..." : "Preparing academic search strategy...")</span>
+                    </div>
+                }
 
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
@@ -93,46 +197,34 @@
                         @errorMessage
                     </div>
                 }
-
-                @if (lastResponse != null && lastResponse.Success)
-                {
-                    <div class="p-4 rounded-lg bg-white border border-oxford-200 shadow-subtle space-y-3">
-                        <div class="flex items-center justify-between border-b border-oxford-100 pb-2">
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-oxford-500">Grounded Synthesis</span>
-                            <button type="button"
-                                    @onclick="CopyAnswer"
-                                    class="btn-press px-2.5 py-1 rounded border border-oxford-200 text-[11px] font-semibold text-oxford-700 hover:bg-oxford-50">
-                                @(isCopied ? "Copied!" : "Copy Answer")
-                            </button>
-                        </div>
-
-                        <div class="text-xs sm:text-sm text-oxford-900 leading-relaxed whitespace-pre-line">
-                            @lastResponse.Answer
-                        </div>
-
-                        @if (lastResponse.CitedSourceIndices.Any())
-                        {
-                            <div class="pt-3 border-t border-oxford-100 space-y-1.5">
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-oxford-500">Cited References</p>
-                                @foreach (var idx in lastResponse.CitedSourceIndices)
-                                {
-                                    @if (idx >= 1 && idx <= Sources.Count)
-                                    {
-                                        var src = Sources[idx - 1];
-                                        <div class="text-xs text-oxford-700 flex items-start gap-2">
-                                            <span class="font-mono font-bold text-flame shrink-0">[@idx]</span>
-                                            <a href="@src.Url" target="_blank" rel="noopener noreferrer" class="hover:underline text-oxford-900 font-medium">
-                                                @src.Title
-                                            </a>
-                                        </div>
-                                    }
-                                }
-                            </div>
-                        }
-                    </div>
-                }
             </div>
-        </div>
+
+            <!-- Pinned Bottom Composer -->
+            <footer class="px-6 py-4 bg-white border-t border-oxford-200 shrink-0">
+                <form @onsubmit="SubmitQuestion" class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <input @bind="questionText"
+                               @bind:event="oninput"
+                               type="text"
+                               maxlength="1000"
+                               placeholder="@(Sources.Count > 0 ? "Ask about these sources..." : "Describe a topic or paste a question...")"
+                               class="w-full pl-3.5 pr-14 py-2.5 bg-bone border border-oxford-300 rounded-lg text-xs text-oxford-950 placeholder-oxford-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-oxford-950 transition-all" />
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-oxford-400 pointer-events-none">
+                            @questionText.Length/1000
+                        </span>
+                    </div>
+                    <button type="submit"
+                            disabled="@(isThinking || string.IsNullOrWhiteSpace(questionText))"
+                            class="btn-flame px-4 py-2.5 rounded-lg text-xs font-bold text-white shadow-subtle disabled:opacity-45 shrink-0">
+                        @(isThinking ? "Working..." : "Ask")
+                    </button>
+                </form>
+                <div class="mt-2 flex items-center justify-between text-[10px] font-mono text-oxford-400">
+                    <span>@AssistantService.ProviderName • @AssistantService.ModelName</span>
+                    <span>Prompt-injection guarded</span>
+                </div>
+            </footer>
+        </aside>
     </div>
 }
 
@@ -141,28 +233,31 @@
     [Parameter] public IReadOnlyList<SourceItem> Sources { get; set; } = Array.Empty<SourceItem>();
     [Parameter] public EventCallback OnClose { get; set; }
 
+    private sealed record StarterPrompt(string Title, string Subtitle, string Prompt);
+    private sealed record ChatTurn(string Question, string Answer, List<int> CitedIndices);
+
+    private readonly List<ChatTurn> thread = new();
     private string questionText = string.Empty;
     private bool isThinking = false;
-    private bool isCopied = false;
+    private int? copiedTurnIndex;
     private string? errorMessage;
-    private ResearchAssistantResponse? lastResponse;
 
-    private static readonly string[] GroundedQuickPrompts =
+    private static readonly StarterPrompt[] GroundedStarters =
     {
-        "Synthesize key findings across these sources",
-        "Compare methodologies and limitations",
-        "Draft a structured study note outline"
+        new("Synthesize key findings", "Summarize the main conclusions across the retrieved sources.", "Synthesize the key findings across these sources."),
+        new("Compare methodologies", "Contrast study designs, populations, and limitations.", "Compare the methodologies and limitations across these sources."),
+        new("Draft a study outline", "Turn these references into structured exam revision notes.", "Draft a structured study note outline from these sources.")
     };
 
-    private static readonly string[] HelperQuickPrompts =
+    private static readonly StarterPrompt[] HelperStarters =
     {
-        "Suggest academic search keywords for my topic",
-        "Which ISourceKO databases best fit my subject?",
-        "Break my research question into sub-topics"
+        new("Refine search keywords", "Convert a broad assignment prompt into scholarly search queries.", "Suggest 4 precise academic search queries for a literature review on sustainable urban transit."),
+        new("Pick the best databases", "Find which of ISourceKO's 12 providers fit your discipline.", "Which ISourceKO academic providers are best for nursing pharmacology and education policy research?"),
+        new("Structure a research question", "Break a broad topic into focused sub-questions.", "Help me break down a broad topic on machine learning in medical imaging into focused research sub-questions.")
     };
 
-    private IEnumerable<string> ActiveQuickPrompts =>
-        Sources.Count > 0 ? GroundedQuickPrompts : HelperQuickPrompts;
+    private IEnumerable<StarterPrompt> ActiveStarterPrompts =>
+        Sources.Count > 0 ? GroundedStarters : HelperStarters;
 
     private async Task RunQuickPrompt(string prompt)
     {
@@ -173,19 +268,21 @@
     private async Task SubmitQuestion()
     {
         if (isThinking || string.IsNullOrWhiteSpace(questionText)) return;
+        var currentQuestion = questionText.Trim();
+        questionText = string.Empty;
         isThinking = true;
         errorMessage = null;
-        lastResponse = null;
 
         try
         {
-            var resp = await AssistantService.AskSourcesAsync(questionText, Sources);
+            var resp = await AssistantService.AskSourcesAsync(currentQuestion, Sources);
             if (resp.Success)
             {
-                lastResponse = resp;
+                thread.Add(new ChatTurn(currentQuestion, resp.Answer, resp.CitedSourceIndices));
             }
             else
             {
+                questionText = currentQuestion;
                 errorMessage = resp.ErrorMessage ?? "Could not generate a response.";
             }
         }
@@ -195,16 +292,26 @@
         }
     }
 
-    private async Task CopyAnswer()
+    private void ClearThread()
     {
-        if (lastResponse == null || string.IsNullOrWhiteSpace(lastResponse.Answer)) return;
+        thread.Clear();
+        errorMessage = null;
+        copiedTurnIndex = null;
+    }
+
+    private static IEnumerable<string> FormatLines(string answer)
+        => answer.Replace("\r\n", "\n").Split('\n');
+
+    private async Task CopyTurnAnswer(int index, string answer)
+    {
+        if (string.IsNullOrWhiteSpace(answer)) return;
         try
         {
-            await JS.InvokeVoidAsync("isourcekoStorage.copyText", lastResponse.Answer);
-            isCopied = true;
+            await JS.InvokeVoidAsync("isourcekoStorage.copyText", answer);
+            copiedTurnIndex = index;
             StateHasChanged();
-            await Task.Delay(2000);
-            isCopied = false;
+            await Task.Delay(1800);
+            copiedTurnIndex = null;
             StateHasChanged();
         }
         catch { }

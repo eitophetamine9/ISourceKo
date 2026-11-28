@@ -23,14 +23,16 @@
                             @AssistantService.ProviderName • @AssistantService.ModelName
                         </span>
                         <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-evergreen-light text-evergreen-dark border border-emerald-200">
-                            @(Math.Min(Sources.Count, 10)) Sources Grounded
+                            @(Sources.Count > 0 ? $"{Math.Min(Sources.Count, 10)} Sources Grounded" : "Query Helper Mode")
                         </span>
                     </div>
                     <h3 class="font-serif text-lg sm:text-xl font-bold text-oxford-950">
-                        Ask Retrieved Sources
+                        @(Sources.Count > 0 ? "Ask Retrieved Sources" : "ISourceKO Research Assistant")
                     </h3>
                     <p class="text-xs text-oxford-500 mt-0.5">
-                        Answers are synthesized strictly from the retrieved papers and study notes on screen with inline [N] citations.
+                        @(Sources.Count > 0
+                            ? "Answers are synthesized strictly from the retrieved papers and study notes on screen with inline [N] citations."
+                            : "Refine your research question into academic search queries or run a search to ground answers in real papers.")
                     </p>
                 </div>
 
@@ -60,7 +62,7 @@
                 <!-- Quick Starter Prompts -->
                 <div class="flex flex-wrap items-center gap-1.5">
                     <span class="text-[11px] font-bold text-oxford-500 uppercase tracking-wider mr-1">Quick Prompts:</span>
-                    @foreach (var prompt in QuickPrompts)
+                    @foreach (var prompt in ActiveQuickPrompts)
                     {
                         <button type="button"
                                 @onclick="() => RunQuickPrompt(prompt)"
@@ -145,12 +147,22 @@
     private string? errorMessage;
     private ResearchAssistantResponse? lastResponse;
 
-    private static readonly string[] QuickPrompts =
+    private static readonly string[] GroundedQuickPrompts =
     {
         "Synthesize key findings across these sources",
         "Compare methodologies and limitations",
         "Draft a structured study note outline"
     };
+
+    private static readonly string[] HelperQuickPrompts =
+    {
+        "Suggest academic search keywords for my topic",
+        "Which ISourceKO databases best fit my subject?",
+        "Break my research question into sub-topics"
+    };
+
+    private IEnumerable<string> ActiveQuickPrompts =>
+        Sources.Count > 0 ? GroundedQuickPrompts : HelperQuickPrompts;
 
     private async Task RunQuickPrompt(string prompt)
     {

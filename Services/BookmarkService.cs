@@ -160,6 +160,96 @@ public class BookmarkService : IBookmarkService
         OnBookmarksChanged?.Invoke();
     }
 
+    public async Task<BookmarkImportResult> ImportBookmarksAsync(IEnumerable<SourceItem> items, bool replaceExisting = false)
+    {
+        var activeClient = _clientId ?? "default";
+        var incoming = items
+            .Where(i => i != null && !string.IsNullOrWhiteSpace(i.Title) && !string.IsNullOrWhiteSpace(i.Url))
+            .ToList();
+
+        var result = new BookmarkImportResult
+        {
+            TotalInFile = incoming.Count,
+            ReplacedExisting = replaceExisting
+        };
+
+        if (incoming.Count == 0 && !replaceExisting)
+        {
+            return result;
+        }
+
+        List<SourceItem> toPersist = new();
+
+        lock (_lock)
+        {
+            if (replaceExisting)
+            {
+                _cache.Clear();
+            }
+
+            var existingIds = _cache
+                .Select(b => b.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in incoming)
+            {
+                if (string.IsNullOrWhiteSpace(item.Id))
+                {
+                    item.Id = Guid.NewGuid().ToString("N");
+                }
+
+                if (existingIds.Contains(item.Id))
+                {
+                    result.SkippedDuplicates++;
+                    continue;
+                }
+
+                item.IsBookmarked = true;
+                item.Tags ??= new List<string>();
+                item.Metadata ??= new Dictionary<string, string>();
+                _cache.Add(item);
+                existingIds.Add(item.Id);
+                toPersist.Add(item);
+                result.AddedCount++;
+            }
+        }
+
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync();
+
+            if (replaceExisting)
+            {
+                var oldEntities = await db.Bookmarks
+                    .Where(b => b.ClientId == activeClient)
+                    .ToListAsync();
+                if (oldEntities.Count > 0)
+                {
+                    db.Bookmarks.RemoveRange(oldEntities);
+                }
+            }
+
+            foreach (var item in toPersist)
+            {
+                var compositeKey = BuildKey(activeClient, item.Id);
+                var existsInDb = !replaceExisting && await db.Bookmarks.AnyAsync(b => b.Id == compositeKey);
+                if (!existsInDb)
+                {
+                    db.Bookmarks.Add(MapToEntity(item, activeClient, compositeKey));
+                }
+            }
+
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist imported bookmarks for client {ClientId}", activeClient);
+        }
+
+        OnBookmarksChanged?.Invoke();
+        return result;
+    }
+
     private static string BuildKey(string clientId, string sourceId) => $"{clientId}:{sourceId}";
 
     private static SourceItem MapToModel(BookmarkEntity e)

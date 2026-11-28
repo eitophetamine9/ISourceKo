@@ -90,6 +90,56 @@ window.isourcekoStorage = (function () {
             } catch { }
         },
 
+        getAllVideoNotes: function () {
+            const notes = {};
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(NOTES_PREFIX)) {
+                        const videoId = key.slice(NOTES_PREFIX.length);
+                        const val = localStorage.getItem(key);
+                        if (videoId && val && val.trim().length > 0) {
+                            notes[videoId] = val;
+                        }
+                    }
+                }
+            } catch { }
+            return notes;
+        },
+
+        importVideoNotes: function (notesMap, replaceExisting) {
+            let importedCount = 0;
+            try {
+                if (replaceExisting) {
+                    const toRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith(NOTES_PREFIX)) {
+                            toRemove.push(key);
+                        }
+                    }
+                    toRemove.forEach(k => localStorage.removeItem(k));
+                }
+
+                if (notesMap && typeof notesMap === 'object') {
+                    Object.keys(notesMap).forEach(videoId => {
+                        const text = notesMap[videoId];
+                        if (videoId && typeof text === 'string' && text.trim().length > 0) {
+                            const existing = localStorage.getItem(NOTES_PREFIX + videoId);
+                            if (replaceExisting || !existing || existing.trim().length === 0) {
+                                localStorage.setItem(NOTES_PREFIX + videoId, text);
+                                importedCount++;
+                            } else if (existing.trim() !== text.trim()) {
+                                localStorage.setItem(NOTES_PREFIX + videoId, existing.trimEnd() + '\n\n--- Imported Note ---\n' + text);
+                                importedCount++;
+                            }
+                        }
+                    });
+                }
+            } catch { }
+            return importedCount;
+        },
+
         initScratchpad: function (textareaEl, videoId, statusEl, counterEl, timestampsEl) {
             function resolve(target, fallbackId) {
                 if (target instanceof HTMLElement) return target;

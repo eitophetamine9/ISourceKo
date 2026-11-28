@@ -1,6 +1,9 @@
 @page "/bookmarks"
 @rendermode InteractiveServer
 @using System.Text
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using ISourceKO.Models
 @using ISourceKO.Models.Enums
 @using ISourceKO.Services
 @inject IBookmarkService BookmarkService
@@ -17,19 +20,39 @@
                 <svg class="w-3.5 h-3.5 fill-amber-500 text-amber-500" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
-                Personal Study Syllabus • SQLite Persisted
+                Personal Study Syllabus • Portable JSON &amp; SQLite
             </span>
             <h1 class="font-serif text-2xl sm:text-3xl font-bold text-oxford-950 tracking-tight">
                 Saved Academic Sources
             </h1>
             <p class="text-xs sm:text-sm text-oxford-600 mt-1">
-                Your curated reading list of journal articles, video lectures, and student notes pinned for exam revision.
+                Your curated reading list of journal articles, video lectures, and student notes. Export a portable JSON save file to back up or share with peers.
             </p>
         </div>
 
-        @if (bookmarks.Any())
-        {
-            <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Always available: Import JSON Save File -->
+            <label class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-oxford-300 text-oxford-900 text-xs font-bold rounded shadow-subtle hover:bg-oxford-50 transition-all cursor-pointer"
+                   title="Upload a previously exported ISourceKO .json backup file">
+                <svg class="w-3.5 h-3.5 text-oxford-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Import JSON</span>
+                <InputFile OnChange="HandleJsonFileSelected" accept=".json,application/json" class="hidden" />
+            </label>
+
+            @if (bookmarks.Any())
+            {
+                <button type="button"
+                        @onclick="ExportJsonBackup"
+                        title="Download a portable JSON backup of your saved bookmarks and lecture scratchpad notes"
+                        class="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 bg-oxford-950 hover:bg-oxford-800 text-bone text-xs font-bold rounded shadow-subtle transition-all">
+                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>@(isJsonExported ? "JSON Exported!" : "Export JSON")</span>
+                </button>
+
                 <select @bind="exportStyle"
                         aria-label="Citation export style"
                         class="py-1.5 px-2.5 bg-bone border border-oxford-300 rounded text-xs font-semibold text-oxford-800 focus:outline-none focus:ring-1 focus:ring-oxford-950 cursor-pointer">
@@ -78,9 +101,84 @@
                 </button>
 
                 <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-oxford-950 text-white font-mono shadow-subtle">@bookmarks.Count</span>
-            </div>
-        }
+            }
+        </div>
     </header>
+
+    <!-- JSON Import Status & Preview Banners -->
+    @if (!string.IsNullOrEmpty(importErrorMessage))
+    {
+        <div class="mt-5 p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-3 animate-scale-in">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>@importErrorMessage</span>
+            </div>
+            <button type="button" @onclick="() => importErrorMessage = null" class="text-red-500 hover:text-red-800 font-bold">Dismiss</button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(importSuccessMessage))
+    {
+        <div class="mt-5 p-3.5 rounded-lg bg-evergreen-light border border-emerald-300 text-evergreen-dark text-xs flex items-center justify-between gap-3 animate-scale-in">
+            <div class="flex items-center gap-2 font-medium">
+                <svg class="w-4 h-4 text-evergreen shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>@importSuccessMessage</span>
+            </div>
+            <button type="button" @onclick="() => importSuccessMessage = null" class="text-evergreen-dark hover:underline font-bold">Dismiss</button>
+        </div>
+    }
+
+    @if (pendingImportBundle != null)
+    {
+        <div class="mt-5 p-4 rounded-lg bg-white border border-oxford-300 shadow-subtle animate-scale-in">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-oxford-950 text-bone uppercase tracking-wider">Ready to Import</span>
+                        <span class="text-xs font-mono text-oxford-500">@pendingImportFileName</span>
+                    </div>
+                    <p class="text-xs text-oxford-800">
+                        Found <strong>@pendingImportBundle.Bookmarks.Count saved source(s)</strong> and
+                        <strong>@pendingImportBundle.VideoNotes.Count lecture note(s)</strong>
+                        (exported @pendingImportBundle.ExportedAt.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")).
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    @if (bookmarks.Any())
+                    {
+                        <div class="flex items-center gap-2 text-xs bg-bone px-2.5 py-1.5 rounded border border-oxford-200">
+                            <label class="inline-flex items-center gap-1 cursor-pointer font-medium text-oxford-800">
+                                <input type="radio" name="importMode" checked="@(!replaceOnImport)" @onchange="() => replaceOnImport = false" />
+                                <span>Merge</span>
+                            </label>
+                            <span class="text-oxford-300">|</span>
+                            <label class="inline-flex items-center gap-1 cursor-pointer font-medium text-oxford-800">
+                                <input type="radio" name="importMode" checked="@replaceOnImport" @onchange="() => replaceOnImport = true" />
+                                <span>Replace current</span>
+                            </label>
+                        </div>
+                    }
+
+                    <button type="button"
+                            @onclick="CancelJsonImport"
+                            class="btn-press px-3 py-1.5 text-xs font-semibold text-oxford-600 hover:text-oxford-900 border border-oxford-200 rounded bg-white">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            @onclick="ConfirmJsonImport"
+                            disabled="@isImporting"
+                            class="btn-flame px-4 py-1.5 text-xs font-bold text-white rounded shadow-subtle disabled:opacity-50">
+                        @(isImporting ? "Importing..." : "Confirm Import")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="mt-8">
         @if (bookmarks.Any())
@@ -134,12 +232,19 @@
                 </div>
                 <h3 class="font-serif text-base font-semibold text-oxford-900">Your reading list is empty</h3>
                 <p class="mt-1 text-xs text-oxford-600 leading-relaxed">
-                    Pin papers, lectures, or peer notes while searching the hub to assemble your persistent research bibliography.
+                    Pin papers, lectures, or peer notes while searching the hub to assemble your persistent research bibliography, or restore a shared JSON save file.
                 </p>
-                <div class="mt-5">
+                <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
                     <a href="" class="btn-flame inline-flex items-center gap-1.5 px-4 py-2 rounded text-xs">
                         Query the Search Hub
                     </a>
+                    <label class="btn-press inline-flex items-center gap-1.5 px-4 py-2 rounded text-xs font-bold bg-white border border-oxford-300 text-oxford-800 hover:bg-oxford-50 cursor-pointer shadow-subtle">
+                        <svg class="w-3.5 h-3.5 text-oxford-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span>Upload Save File (.json)</span>
+                        <InputFile OnChange="HandleJsonFileSelected" accept=".json,application/json" class="hidden" />
+                    </label>
                 </div>
             </div>
         }
@@ -161,10 +266,24 @@
                OnClose="CloseCitationModal" />
 
 @code {
+    private static readonly JsonSerializerOptions BackupJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private List<SourceItem> bookmarks = new();
     private CitationStyle exportStyle = CitationStyle.Apa7;
     private bool isAllCopied = false;
     private bool isGuideExported = false;
+    private bool isJsonExported = false;
+    private bool isImporting = false;
+    private bool replaceOnImport = false;
+    private BookmarkBackupBundle? pendingImportBundle;
+    private string? pendingImportFileName;
+    private string? importSuccessMessage;
+    private string? importErrorMessage;
     private AcademicField? selectedField = null;
     private SourceItem? activeVideoItem;
     private SourceItem? activePdfItem;
@@ -323,6 +442,145 @@
             StateHasChanged();
         }
         catch { }
+    }
+
+    private async Task ExportJsonBackup()
+    {
+        if (!bookmarks.Any()) return;
+
+        Dictionary<string, string> videoNotes = new();
+        try
+        {
+            videoNotes = await JS.InvokeAsync<Dictionary<string, string>>("isourcekoStorage.getAllVideoNotes") ?? new();
+        }
+        catch { }
+
+        var bundle = new BookmarkBackupBundle
+        {
+            ExportedAt = DateTime.UtcNow,
+            Bookmarks = bookmarks.ToList(),
+            VideoNotes = videoNotes
+        };
+
+        var json = JsonSerializer.Serialize(bundle, BackupJsonOptions);
+        var filename = $"isourceko-syllabus-{DateTime.Now:yyyy-MM-dd}.json";
+
+        try
+        {
+            await JS.InvokeVoidAsync("isourcekoStorage.downloadTextFile", filename, json);
+            isJsonExported = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            isJsonExported = false;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task HandleJsonFileSelected(InputFileChangeEventArgs e)
+    {
+        importErrorMessage = null;
+        importSuccessMessage = null;
+        pendingImportBundle = null;
+
+        var file = e.File;
+        if (file == null) return;
+
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            importErrorMessage = "Backup file exceeds the 5MB limit.";
+            return;
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var rawJson = await reader.ReadToEndAsync();
+
+            var bundle = TryParseBackupJson(rawJson);
+            if (bundle == null || (bundle.Bookmarks.Count == 0 && bundle.VideoNotes.Count == 0))
+            {
+                importErrorMessage = "The selected JSON file does not contain any valid ISourceKO saved sources or lecture notes.";
+                return;
+            }
+
+            pendingImportBundle = bundle;
+            pendingImportFileName = file.Name;
+            replaceOnImport = false;
+        }
+        catch (JsonException)
+        {
+            importErrorMessage = "Invalid JSON syntax. Please upload an unmodified ISourceKO .json backup file.";
+        }
+        catch (Exception ex)
+        {
+            importErrorMessage = $"Could not read backup file: {ex.Message}";
+        }
+    }
+
+    private static BookmarkBackupBundle? TryParseBackupJson(string rawJson)
+    {
+        if (string.IsNullOrWhiteSpace(rawJson)) return null;
+
+        var trimmed = rawJson.TrimStart();
+        if (trimmed.StartsWith("["))
+        {
+            var rawList = JsonSerializer.Deserialize<List<SourceItem>>(rawJson, BackupJsonOptions);
+            return rawList == null ? null : new BookmarkBackupBundle { Bookmarks = rawList };
+        }
+
+        var bundle = JsonSerializer.Deserialize<BookmarkBackupBundle>(rawJson, BackupJsonOptions);
+        if (bundle != null)
+        {
+            bundle.Bookmarks ??= new List<SourceItem>();
+            bundle.VideoNotes ??= new Dictionary<string, string>();
+        }
+        return bundle;
+    }
+
+    private async Task ConfirmJsonImport()
+    {
+        if (pendingImportBundle == null || isImporting) return;
+        isImporting = true;
+        importErrorMessage = null;
+
+        try
+        {
+            var result = await BookmarkService.ImportBookmarksAsync(pendingImportBundle.Bookmarks, replaceOnImport);
+            var restoredNotes = 0;
+
+            if (pendingImportBundle.VideoNotes.Count > 0 || replaceOnImport)
+            {
+                try
+                {
+                    restoredNotes = await JS.InvokeAsync<int>("isourcekoStorage.importVideoNotes", pendingImportBundle.VideoNotes, replaceOnImport);
+                }
+                catch { }
+            }
+
+            LoadBookmarks();
+            selectedField = null;
+            pendingImportBundle = null;
+            pendingImportFileName = null;
+
+            var duplicateMsg = result.SkippedDuplicates > 0 ? $" ({result.SkippedDuplicates} duplicate(s) skipped)" : string.Empty;
+            importSuccessMessage = $"Imported {result.AddedCount} source(s) and {restoredNotes} lecture note(s){duplicateMsg}.";
+        }
+        catch (Exception ex)
+        {
+            importErrorMessage = $"Import failed: {ex.Message}";
+        }
+        finally
+        {
+            isImporting = false;
+        }
+    }
+
+    private void CancelJsonImport()
+    {
+        pendingImportBundle = null;
+        pendingImportFileName = null;
     }
 
     private void OpenVideoModal(SourceItem item) => activeVideoItem = item;

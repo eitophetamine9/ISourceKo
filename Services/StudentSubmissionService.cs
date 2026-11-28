@@ -96,6 +96,8 @@ public class StudentSubmissionService : IStudentSubmissionService
             Type = submission.Type,
             SourceUrl = submission.SourceUrl,
             ImagePath = submission.ImagePath,
+            NoteContent = submission.NoteContent,
+            IsSystemGenerated = submission.IsSystemGenerated,
             StudentName = submission.StudentName,
             SchoolOrProgram = submission.SchoolOrProgram,
             SubmittedAt = submission.SubmittedAt,
@@ -182,7 +184,7 @@ public class StudentSubmissionService : IStudentSubmissionService
             tags = new List<string>();
         }
 
-        return new StudentSubmission
+        var model = new StudentSubmission
         {
             Id = entity.Id,
             Title = entity.Title,
@@ -191,6 +193,8 @@ public class StudentSubmissionService : IStudentSubmissionService
             Type = entity.Type,
             SourceUrl = entity.SourceUrl,
             ImagePath = entity.ImagePath,
+            NoteContent = entity.NoteContent,
+            IsSystemGenerated = entity.IsSystemGenerated,
             StudentName = entity.StudentName,
             SchoolOrProgram = entity.SchoolOrProgram,
             SubmittedAt = entity.SubmittedAt,
@@ -207,5 +211,7 @@ public class StudentSubmissionService : IStudentSubmissionService
                 })
                 .ToList()
         };
+        StudyNoteGeneratorService.EnsureHydrated(model);
+        return model;
     }
 }

@@ -22,6 +22,7 @@
             smoothWheel: true,
             wheelMultiplier: 0.9,
             touchMultiplier: 1.5,
+            prevent: (node) => node.closest('[data-lenis-prevent], .fixed.inset-0') !== null,
         });
 
         if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {

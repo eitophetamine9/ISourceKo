@@ -39,6 +39,7 @@ public static class DatabaseInitializer
         foreach (var starter in starterSubmissions)
         {
             starter.IsSystemGenerated = true;
+            starter.StudentName = "ISource Gen";
             var tags = new List<string>();
             try { tags = JsonSerializer.Deserialize<List<string>>(starter.TagsJson) ?? new(); } catch { }
             starter.NoteContent = ISourceKO.Services.StudyNoteGeneratorService.GenerateStructuredNote(

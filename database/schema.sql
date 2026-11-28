@@ -134,10 +134,11 @@ select * from (values
 ) as v(title, description, field, type, image_path, is_system_generated, student_name, school_or_program, upvotes, tags)
 where not exists (select 1 from public.student_submissions);
 
--- Flag pre-v2.1 seeded starter notes as system-generated
+-- Flag pre-v2.1 seeded starter notes as system-generated and attribute to ISource Gen
 update public.student_submissions
-set is_system_generated = true
-where is_system_generated = false
+set is_system_generated = true,
+    student_name = 'ISource Gen'
+where (is_system_generated = false or student_name <> 'ISource Gen')
   and title in (
     'Handwritten Quick Reference: Graph Algorithms & Dijkstra Complexity',
     'Feedback Control Systems: Root Locus & Bode Stability Analysis',

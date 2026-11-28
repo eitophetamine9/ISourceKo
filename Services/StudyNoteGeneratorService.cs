@@ -71,6 +71,11 @@ public static class StudyNoteGeneratorService
             submission.IsSystemGenerated = true;
         }
 
+        if (submission.IsSystemGenerated)
+        {
+            submission.StudentName = "ISource Gen";
+        }
+
         if (string.IsNullOrWhiteSpace(submission.NoteContent) && submission.IsSystemGenerated)
         {
             submission.NoteContent = GenerateStructuredNote(

@@ -80,7 +80,37 @@ builder.Services.AddHttpClient("PubMed", client =>
 builder.Services.AddHttpClient("Crossref", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(6);
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.0 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.1 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("DOAJ", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.1 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("EuropePMC", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.1 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("ERIC", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.1 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("HAL", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(6);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.1 (mailto:research@isourceko.edu)");
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+});
+builder.Services.AddHttpClient("ResearchAI", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(25);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("ISourceKO/2.1 ResearchAssistant");
     client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 });
 
@@ -112,11 +142,12 @@ if (!string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supaba
     builder.Services.AddSingleton(supabase);
 }
 
-// Register Storage, Submission, Bookmark & Search Analytics Services
+// Register Storage, Submission, Bookmark, Search Analytics & Research Assistant Services
 builder.Services.AddSingleton<IStudentSubmissionService, SupabaseSubmissionService>();
 builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddSingleton<ISearchAnalyticsService, SearchAnalyticsService>();
 builder.Services.AddScoped<IBookmarkService, BookmarkService>();
+builder.Services.AddScoped<IResearchAssistantService, ResearchAssistantService>();
 
 // Register Multi-Platform Source Providers (OpenAlex primary open-access + live connectors)
 builder.Services.AddTransient<ISourceProvider, OpenAlexSourceProvider>();
@@ -127,6 +158,10 @@ builder.Services.AddTransient<ISourceProvider, CommunitySourceProvider>();
 builder.Services.AddTransient<ISourceProvider, ArXivSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, PubMedSourceProvider>();
 builder.Services.AddTransient<ISourceProvider, CrossrefSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, DoajSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, EuropePmcSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, EricSourceProvider>();
+builder.Services.AddTransient<ISourceProvider, HalSourceProvider>();
 
 // Register Aggregator
 builder.Services.AddScoped<ISourceAggregatorService, SourceAggregatorService>();

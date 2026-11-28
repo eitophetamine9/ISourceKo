@@ -10,5 +10,9 @@ public enum SourcePlatform
     StudentCommunity,
     ArXiv,
     PubMed,
-    Crossref
+    Crossref,
+    DOAJ,
+    EuropePMC,
+    ERIC,
+    HAL
 }

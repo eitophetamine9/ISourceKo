@@ -82,6 +82,38 @@
                         </svg>
                         <span>Web Resources & Tools</span>
                     </button>
+                    <button type="button"
+                            @onclick="() => FilterByType(SubmissionType.TextNote)"
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 @(selectedType == SubmissionType.TextNote ? "bg-oxford-950 text-bone shadow-subtle" : "text-oxford-700 hover:bg-oxford-100")">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Written Study Notes</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Origin Provenance Filter -->
+            <div>
+                <label class="block text-xs font-bold text-oxford-900 uppercase tracking-wider mb-2">
+                    Note Origin
+                </label>
+                <div class="flex flex-col gap-1 text-xs">
+                    <button type="button"
+                            @onclick='() => FilterByOrigin("all")'
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-semibold transition-colors @(originFilter == "all" ? "bg-oxford-950 text-bone shadow-subtle" : "text-oxford-700 hover:bg-oxford-100")">
+                        All Sources
+                    </button>
+                    <button type="button"
+                            @onclick='() => FilterByOrigin("user")'
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 @(originFilter == "user" ? "bg-evergreen-dark text-white shadow-subtle" : "text-oxford-700 hover:bg-oxford-100")">
+                        <span>Made by Peers Only</span>
+                    </button>
+                    <button type="button"
+                            @onclick='() => FilterByOrigin("system")'
+                            class="interactive-tab w-full text-left px-2.5 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 @(originFilter == "system" ? "bg-indigo-700 text-white shadow-subtle" : "text-oxford-700 hover:bg-oxford-100")">
+                        <span>System Premade Only</span>
+                    </button>
                 </div>
             </div>
 
@@ -118,18 +150,21 @@
             {
                 <LoadingSkeleton Count="4" />
             }
-            else if (submissions.Any())
+            else if (VisibleSubmissions.Any())
             {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-                    @foreach (var submission in submissions)
+                    @foreach (var submission in VisibleSubmissions)
                     {
-                        <StudentSourceCard Submission="submission" OnViewImage="OpenImageModal" OnDelete="HandleSubmissionDeleted" />
+                        <StudentSourceCard Submission="submission"
+                                           OnViewImage="OpenImageModal"
+                                           OnDelete="HandleSubmissionDeleted"
+                                           OnReadNote="OpenNoteModal" />
                     }
                 </div>
             }
             else
             {
-                <EmptyState Title="No student submissions matched" Message="Try adjusting your subject filter or be the first student to upload a note for this topic!" />
+                <EmptyState Title="No student submissions matched" Message="Try adjusting your subject or origin filter, or be the first student to upload a note for this topic!" />
             }
         </main>
     </div>
@@ -138,14 +173,26 @@
 <!-- Darkroom Modal for Full Note Photo -->
 <ImageModal ImageUrl="@activeModalImage" OnClose="CloseImageModal" />
 
+<!-- In-App Study Note Reader Modal -->
+<StudyNoteModal Note="@activeModalNote" OnClose="CloseNoteModal" />
+
 @code {
     private List<StudentSubmission> submissions = new();
     private string filterQuery = string.Empty;
     private SubmissionType? selectedType = null;
     private AcademicField selectedField = AcademicField.General;
     private string sortBy = "newest";
+    private string originFilter = "all";
     private bool isLoading = true;
     private string? activeModalImage;
+    private StudentSubmission? activeModalNote;
+
+    private IEnumerable<StudentSubmission> VisibleSubmissions => originFilter switch
+    {
+        "user" => submissions.Where(s => !s.IsSystemGenerated),
+        "system" => submissions.Where(s => s.IsSystemGenerated),
+        _ => submissions
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,6 +227,11 @@
         await LoadSubmissions();
     }
 
+    private void FilterByOrigin(string origin)
+    {
+        originFilter = origin;
+    }
+
     private void OpenImageModal(string imageUrl)
     {
         activeModalImage = imageUrl;
@@ -188,6 +240,16 @@
     private void CloseImageModal()
     {
         activeModalImage = null;
+    }
+
+    private void OpenNoteModal(StudentSubmission submission)
+    {
+        activeModalNote = submission;
+    }
+
+    private void CloseNoteModal()
+    {
+        activeModalNote = null;
     }
 
     private void HandleSubmissionDeleted(string id)

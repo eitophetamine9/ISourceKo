@@ -144,8 +144,24 @@ else
         <div>
             <!-- Header: Platform Badge, DOI, & Bookmark Button -->
             <div class="flex items-center justify-between gap-3 mb-2.5 pt-1">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="flex items-center gap-2 min-w-0 flex-wrap">
                     <PlatformBadge Platform="Item.Platform" />
+                    @if (Item.Platform == SourcePlatform.StudentCommunity &&
+                         Item.Metadata.TryGetValue("IsSystemGenerated", out var isSysVal))
+                    {
+                        if (string.Equals(isSysVal, "true", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">
+                                System Premade
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-evergreen-light text-evergreen-dark border border-emerald-200 font-bold">
+                                Made by Peer
+                            </span>
+                        }
+                    }
                     @if (Item.Metadata.TryGetValue("DOI", out var doi) && !string.IsNullOrWhiteSpace(doi))
                     {
                         <span class="text-[11px] font-mono text-oxford-400 truncate max-w-[140px]" title="@doi">DOI:@doi</span>

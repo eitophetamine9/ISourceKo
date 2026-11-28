@@ -81,6 +81,28 @@ create policy "bookmarks_all" on public.bookmarks
     for all to anon using (true) with check (true);
 
 
+-- 2b. Student Peer Comments Table (v2.1)
+create table if not exists public.student_comments (
+    id bigint generated always as identity primary key,
+    submission_id bigint not null references public.student_submissions(id) on delete cascade,
+    author_name text not null default 'Fellow Student',
+    content text not null,
+    created_at timestamptz not null default now()
+);
+
+create index if not exists idx_student_comments_submission_id on public.student_comments (submission_id);
+
+grant select, insert on public.student_comments to anon;
+alter table public.student_comments enable row level security;
+
+drop policy if exists "comments_read" on public.student_comments;
+drop policy if exists "comments_insert" on public.student_comments;
+create policy "comments_read" on public.student_comments
+    for select to anon using (true);
+create policy "comments_insert" on public.student_comments
+    for insert to anon with check (true);
+
+
 -- 3. Seed High-Yield Collegiate Starter Notes (If Table is Empty)
 insert into public.student_submissions (title, description, field, type, image_path, is_system_generated, student_name, school_or_program, upvotes, tags)
 select * from (values
